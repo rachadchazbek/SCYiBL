@@ -36,7 +36,6 @@ def create_multi_model(num_filters, kernel_size, vocab_size, embedding_dim, maxl
                   metrics=[AUC(multi_label=True, num_labels=8, from_logits=True)])
     return model
 
-
 xls = pd.ExcelFile("data.xlsx") #use r before absolute file path
 data = xls.parse(0) #2 is the sheet number+1 thus if the file has only 1 sheet write 0 in paranthesis
 sentences = data['Sentence']
@@ -70,7 +69,7 @@ def display_frequencies(data):
                nb_sentences - data[data['Exposure/Habitb'] != 0]['Exposure/Habitb'].sum(), nb_sentences - data[data['PERMAb'] != 0]['PERMAb'].sum()]]
 
     columns = ('CP', 'Constructivism', 'Coping', 'ED', 'ER/SF', 'Empowerment', 'Exposure/Habit', 'PERMA')
-    rows = ['0', '1', '%']
+    rows = ['1', '0', '%']
     # Get some pastel shades for the colors
     colors = plt.cm.BuPu(np.linspace(0, 0.5, len(rows)))
     n_rows = len(counts)
