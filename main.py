@@ -43,7 +43,7 @@ sentences = data['Sentence']
 classes = ('CP', 'Constructivism', 'Coping', 'ED', 'ER/SF', 'Empowerment', 'Exposure/Habit', 'PERMA')
 classes_bin = ('CPb', 'Constructivismb', 'Copingb', 'EDb', 'ER/SFb', 'Empowermentb', 'Exposure/Habitb', 'PERMAb')
 
-data = data.astype('str')
+data = data.astype("string")
 data['CPb'] = data['CP'].apply(lambda x: 1 if x != "0" else 0)
 data['Constructivismb'] = data['Constructivism'].apply(lambda x: 1 if x != "0" else 0)
 data['Copingb'] = data['Coping'].apply(lambda x: 1 if x != "0" else 0)
