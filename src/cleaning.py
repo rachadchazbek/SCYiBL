@@ -1,17 +1,20 @@
+import io
 import pandas as pd
 import spacy
 import re
 import string
+import dvc.api as dvc
 
 # Retirer les doublons 
 # Théories mal encodées (out of range)
 
 # use remote repository instead of file path
-xls = pd.ExcelFile(r"C:/Users/theob/Documents/data.xlsx") #use r before absolute file path
-data = xls.parse(0) #2 is the sheet number+1 thus if the file has only 1 sheet write 0 in paranthesis
-sentences = data['Sentence']
-classes = ('CP', 'Constructivism', 'Coping', 'ED', 'ER/SR', 'Empowerment', 'Exposure/Habit', 'PERMA')
-classes_bin = ('CPb', 'Constructivismb', 'Copingb', 'EDb', 'ER/SRb', 'Empowermentb', 'Exposure/Habitb', 'PERMAb')
+with dvc.open(
+        'data/data.xlsx',
+        mode='rb'
+        ) as fd:
+        xls = pd.ExcelFile(fd)
+data = xls.parse(0)        
 
 # retirer punctuation, chiffres et mettre en minuscule
 def cleanText(text):
