@@ -3,9 +3,6 @@ import spacy
 import re
 import string
 
-# Retirer les doublons 
-# Théories mal encodées (out of range)
-
 # use remote repository instead of file path
 xls = pd.ExcelFile(r"C:/Users/theob/Documents/data.xlsx") #use r before absolute file path
 data = xls.parse(0) #2 is the sheet number+1 thus if the file has only 1 sheet write 0 in paranthesis
@@ -38,9 +35,18 @@ def checkMissingValues(df):
 
 checkMissingValues(data)
 
+# Retirer les lignes ou les phrases sont répétées
+data_try = data.drop_duplicates(subset="Sentence",keep="first") # remove repeated sentences
+'''
+Could find an alternative for rows that have same sentence but different categories -> merge
+'''
 
 # retirer stop words
+# Théories mal encodées (out of range)
+# Exploratory Data Analysis - afficher mot les plus courants pour chaque catégorie
 
+
+# ESSAI
 #for index, sentence in data['Sentence'].items():
 #    print(f"Index: {index} is: {sentence}")
 #print(data['Sentence'].sort_values(key=lambda x: x.str.lower()))
