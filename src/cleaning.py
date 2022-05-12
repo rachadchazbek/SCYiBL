@@ -5,9 +5,6 @@ import re
 import string
 import dvc.api as dvc
 
-# Retirer les doublons 
-# Théories mal encodées (out of range)
-
 # use remote repository instead of file path
 with dvc.open(
         'data/data.xlsx',
@@ -41,9 +38,18 @@ def checkMissingValues(df):
 
 checkMissingValues(data)
 
+# Retirer les lignes ou les phrases sont répétées
+data_try = data.drop_duplicates(subset="Sentence",keep="first") # remove repeated sentences
+'''
+Could find an alternative for rows that have same sentence but different categories -> merge
+'''
 
 # retirer stop words
+# Théories mal encodées (out of range)
+# Exploratory Data Analysis - afficher mot les plus courants pour chaque catégorie
 
+
+# ESSAI
 #for index, sentence in data['Sentence'].items():
 #    print(f"Index: {index} is: {sentence}")
 #print(data['Sentence'].sort_values(key=lambda x: x.str.lower()))
