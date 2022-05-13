@@ -75,14 +75,6 @@ for i in range(len(sorted(data_set))):
 
 # Exploratory Data Analysis - afficher mot les plus courants pour chaque catégorie
 
-
-# ESSAI
-#for index, sentence in data['Sentence'].items():
-#    print(f"Index: {index} is: {sentence}")
-#print(data['Sentence'].sort_values(key=lambda x: x.str.lower()))
-# montrer les phrases qui sont présentes plus d'une fois dans le dataset
-#print(data[data.duplicated(subset=['Sentence'])]['Sentence'])
-
 # similarité des phrases + doublons 
 # if similarity = 1.0 -> doublons -> merge values des différentes catégories
 '''
