@@ -4,14 +4,18 @@ import spacy
 import re
 import string
 import dvc.api as dvc
+import nltk
+from nltk.corpus import stopwords
+from nltk.tokenize import word_tokenize
 
 # use remote repository instead of file path
 with dvc.open(
         'data/data.xlsx',
         mode='rb'
         ) as fd:
-        xls = pd.ExcelFile(fd)
-data = xls.parse(0)        
+        data = pd.read_excel(fd, sheet_name='Sheet1')     
+data = data.astype(str) # dont know if it's useful
+
 
 # retirer punctuation, chiffres et mettre en minuscule
 def cleanText(text):
@@ -39,13 +43,34 @@ def checkMissingValues(df):
 checkMissingValues(data)
 
 # Retirer les lignes ou les phrases sont répétées
-data_try = data.drop_duplicates(subset="Sentence",keep="first") # remove repeated sentences
+data = data.drop_duplicates(subset="Sentence",keep="first").reset_index() # remove repeated sentences
 '''
 Could find an alternative for rows that have same sentence but different categories -> merge
 '''
 
 # retirer stop words
+stop = stopwords.words('english')
+data['Sentence'] = data['Sentence'].apply(lambda x: ' '.join([word for word in x.split() if word not in (stop)]))
+print(data['Sentence'])
+
+# add stop word to stop if necessary...
+
+'''
 # Théories mal encodées (out of range)
+# pour chaque colonne, faire un set avec tout les chiffres, vérifier le range avec between
+data_try = data_try['PERMA'].to_list()
+data_set = set(",".join(str(e) for e in data_try))
+data_set.remove(".")
+data_set.remove(",")
+data_set.remove(" ")
+data_set = set(map(int, data_set))
+print(sorted(data_set))
+# checker si les sous-catégories sont dans le range indiqué
+for i in range(len(sorted(data_set))):
+    if 
+'''
+
+
 # Exploratory Data Analysis - afficher mot les plus courants pour chaque catégorie
 
 
