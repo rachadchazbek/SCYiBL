@@ -62,6 +62,8 @@ stop = stopwords.words('english')
 # add stop word to stop if necessary
 # example:
 stop.append('id')
+stop.append('im')
+stop.append('ive')
 data['Sentence'] = data['Sentence'].apply(lambda x: ' '.join([word for word in x.split() if word not in (stop)]))
 
 '''
@@ -79,7 +81,10 @@ for i in range(len(sorted(data_set))):
     if 
 '''
 
-# Exploratory Data Analysis - afficher mot les plus courants pour chaque catégorie
+# Exploratory Data Analysis - afficher mot les plus courants
+wordCount_df = data['Sentence'].str.split(expand=True).stack().value_counts().reset_index()
+wordCount_df.columns = ['Word', 'Frequency']
+print(wordCount_df)
 
 
 
