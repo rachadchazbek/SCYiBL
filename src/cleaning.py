@@ -50,10 +50,12 @@ Could find an alternative for rows that have same sentence but different categor
 
 # retirer stop words
 stop = stopwords.words('english')
+# add stop word to stop if necessary
+# example:
+stop.append('id')
 data['Sentence'] = data['Sentence'].apply(lambda x: ' '.join([word for word in x.split() if word not in (stop)]))
 print(data['Sentence'])
 
-# add stop word to stop if necessary...
 
 '''
 # Théories mal encodées (out of range)
