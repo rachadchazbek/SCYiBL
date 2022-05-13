@@ -14,8 +14,17 @@ with dvc.open(
         mode='rb'
         ) as fd:
         data = pd.read_excel(fd, sheet_name='Sheet1')     
-data = data.astype(str) # dont know if it's useful
+data = data.astype("string") # dont know if it's useful
 
+# make binary dataset
+data['CP'] = data['CP'].apply(lambda x: 1 if x != "0" else 0)
+data['Constructivism'] = data['Constructivism'].apply(lambda x: 1 if x != "0" else 0)
+data['Coping'] = data['Coping'].apply(lambda x: 1 if x != "0" else 0)
+data['ED'] = data['ED'].apply(lambda x: 1 if x != "0" else 0)
+data['ER/SR'] = data['ER/SR'].apply(lambda x: 1 if x != "0" else 0)
+data['Empowerment'] = data['Empowerment'].apply(lambda x: 1 if x != "0" else 0)
+data['Exposure/Habit'] = data['Exposure/Habit'].apply(lambda x: 1 if x != "0" else 0)
+data['PERMA'] = data['PERMA'].apply(lambda x: 1 if x != "0" else 0)
 
 # retirer punctuation, chiffres et mettre en minuscule
 def cleanText(text):
@@ -54,8 +63,6 @@ stop = stopwords.words('english')
 # example:
 stop.append('id')
 data['Sentence'] = data['Sentence'].apply(lambda x: ' '.join([word for word in x.split() if word not in (stop)]))
-print(data['Sentence'])
-
 
 '''
 # Théories mal encodées (out of range)
@@ -72,8 +79,9 @@ for i in range(len(sorted(data_set))):
     if 
 '''
 
-
 # Exploratory Data Analysis - afficher mot les plus courants pour chaque catégorie
+
+
 
 # similarité des phrases + doublons 
 # if similarity = 1.0 -> doublons -> merge values des différentes catégories
