@@ -60,14 +60,14 @@ data = data.drop_duplicates(subset="Sentence",keep="first").reset_index() # remo
 Could find an alternative for rows that have same sentence but different categories -> merge
 '''
 
-# # retirer stop words
-# stop = stopwords.words('english')
-# # add stop word to stop if necessary
-# # example:
-# stop.append('id')
-# stop.append('im')
-# stop.append('ive')
-# data['Sentence'] = data['Sentence'].apply(lambda x: ' '.join([word for word in x.split() if word not in (stop)]))
+# retirer stop words
+stop = stopwords.words('english')
+# add stop word to stop if necessary
+# example:
+stop.append('id')
+stop.append('im')
+stop.append('ive')
+data['Sentence'] = data['Sentence'].apply(lambda x: ' '.join([word for word in x.split() if word not in (stop)]))
 
 '''
 # Théories mal encodées (out of range)
