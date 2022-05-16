@@ -78,4 +78,5 @@ wordCountPERMA.plot(kind='bar')
 plt.show()
 
 # mettre en avant les mots qui sont dans plusieurs catégories 
+# add to stopwords words in top20 of all categories
 # We can see that there is a lot of overlap in most used words per category 
