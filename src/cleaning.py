@@ -1,12 +1,8 @@
-import io
 import pandas as pd
-import spacy
 import re
 import string
 import dvc.api as dvc
-import nltk
 from nltk.corpus import stopwords
-from nltk.tokenize import word_tokenize
 
 # use remote repository instead of file path
 with dvc.open(
