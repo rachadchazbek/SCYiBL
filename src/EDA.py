@@ -34,7 +34,7 @@ textPERMA = textPerCategory(data, 'PERMA')
 # faire un dictionaries avec key= catégorie and values = text
 textDict = {'CP': textCP, 'Constructivism': textConstructivism, 'Coping': textCoping, 
         'ED': textED, 'ER': textER, 'Empowerment':textEmpowerment, 
-        'Exposure/Habit': textExposure, 'PERMA':textPERMA}
+        'Exposure': textExposure, 'PERMA':textPERMA}
 
 # token and wordcount pour chaque key
 for key, value in textDict.items():
@@ -45,10 +45,34 @@ for key, value in textDict.items():
 # word cloud
 
 # histograms
-wordCountED.plot(kind='bar')
+# Figure avec les 8 plots
+plt.subplot(4, 2, 1)
+plt.subplots_adjust(hspace=1)
+plt.title("CP", y = 0.6)
 wordCountCP.plot(kind='bar')
+plt.subplot(4, 2, 2)
+plt.title("Constructivism", y = 0.6)
+wordCountConstructivism.plot(kind='bar')
+plt.subplot(4, 2, 3)
+plt.title("Coping", y = 0.6)
+wordCountCoping.plot(kind='bar')
+plt.subplot(4, 2, 4)
+plt.title("ED", y = 0.6)
+wordCountED.plot(kind='bar')
+plt.subplot(4, 2, 5)
+plt.title("ER/SR", y = 0.6)
+wordCountER.plot(kind='bar')
+plt.subplot(4, 2, 6)
+plt.title("Empowerment", y = 0.6)
+wordCountEmpowerment.plot(kind='bar')
+plt.subplot(4, 2, 7)
+plt.title("Exposure", y = 0.6)
+wordCountExposure.plot(kind='bar')
+plt.subplot(4, 2, 8)
+plt.title("PERMA", y = 0.6)
+wordCountPERMA.plot(kind='bar')
+
 plt.show()
 
-# faire une figure avec les 8 plots 
 # mettre en avant les mots qui sont dans plusieurs catégories 
 # We can see that there is a lot of overlap in most used words per category 
