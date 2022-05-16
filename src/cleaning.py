@@ -60,14 +60,14 @@ data = data.drop_duplicates(subset="Sentence",keep="first").reset_index() # remo
 Could find an alternative for rows that have same sentence but different categories -> merge
 '''
 
-# retirer stop words
-stop = stopwords.words('english')
-# add stop word to stop if necessary
-# example:
-stop.append('id')
-stop.append('im')
-stop.append('ive')
-data['Sentence'] = data['Sentence'].apply(lambda x: ' '.join([word for word in x.split() if word not in (stop)]))
+# # retirer stop words
+# stop = stopwords.words('english')
+# # add stop word to stop if necessary
+# # example:
+# stop.append('id')
+# stop.append('im')
+# stop.append('ive')
+# data['Sentence'] = data['Sentence'].apply(lambda x: ' '.join([word for word in x.split() if word not in (stop)]))
 
 '''
 # Théories mal encodées (out of range)
@@ -88,7 +88,9 @@ for i in range(len(sorted(data_set))):
 wordCount_df = data['Sentence'].str.split(expand=True).stack().value_counts().reset_index()
 wordCount_df.columns = ['Word', 'Frequency']
 print(wordCount_df)
+print(data)
 
+data.to_excel('./output/output_cleaning.xlsx')
 
 
 # similarité des phrases + doublons 
@@ -99,3 +101,5 @@ doc1 = nlp("miserable.")
 doc2 = nlp("miserable.")
 print(doc1.similarity(doc2))
 '''
+
+# Output the cleaned dataset in xlsx format
