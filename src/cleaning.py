@@ -2,6 +2,8 @@ import pandas as pd
 import re
 import string
 import dvc.api as dvc
+import nltk
+import ssl
 from nltk.corpus import stopwords
 
 # // Functions
@@ -16,6 +18,9 @@ def cleanText(text):
     text = re.sub('[‘’“”…]', '', text)
     return text
 
+# Could find an alternative for rows that have same sentence but different categories -> merge
+nettoyage = lambda x: cleanText(x)
+
 # Vérifier s'il y a des données manquantes
 def checkMissingValues(df):
     nbEmptyCells = df.isna().sum().sum() 
@@ -23,18 +28,25 @@ def checkMissingValues(df):
         df.dropna(axis='rows')
     return(df)
 
-# Could find an alternative for rows that have same sentence but different categories -> merge
-nettoyage = lambda x: cleanText(x)
+def getStopWords(): 
+    try:
+        _create_unverified_https_context = ssl._create_unverified_context
+    except AttributeError:
+        pass
+    else:
+        ssl._create_default_https_context = _create_unverified_https_context
+    # Stop words
+    nltk.download('stopwords')
+    stop = stopwords.words('english')
+    # Add stop word to array if necessary
+    stopWords = ['id', 'im', 'ive']
 
-# Stop words
-stop = stopwords.words('english')
-# Add stop word to array if necessary
-stopWords = ['id', 'im', 'ive']
+    for word in stopWords:
+        stop.append(word)
 
-for word in stopWords:
-    stop.append(word)
+    return stop
 
-cleaning_stopWords = lambda x: ' '.join([word for word in x.split() if word not in (stop)])
+cleaning_stopWords = lambda x: ' '.join([word for word in x.split() if word not in (getStopWords())])
 
 # // Main 
 
