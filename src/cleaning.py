@@ -18,15 +18,15 @@ def cleanText(text):
     text = re.sub('[‘’“”…]', '', text)
     return text
 
+# Could find an alternative for rows that have same sentence but different categories -> merge
+nettoyage = lambda x: cleanText(x)
+
 # Vérifier s'il y a des données manquantes
 def checkMissingValues(df):
     nbEmptyCells = df.isna().sum().sum() 
     if (nbEmptyCells != 0):
         df.dropna(axis='rows')
     return(df)
-
-# Could find an alternative for rows that have same sentence but different categories -> merge
-nettoyage = lambda x: cleanText(x)
 
 def getStopWords(): 
     try:
