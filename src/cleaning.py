@@ -16,6 +16,9 @@ with dvc.open(
         data = pd.read_excel(fd, sheet_name='Sheet1')     
 data = data.astype("string") # dont know if it's useful
 
+# change column name
+data.rename(columns={'ER/SF':'ER/SR'}, inplace=True)
+
 # make binary dataset
 data['CP'] = data['CP'].apply(lambda x: 1 if x != "0" else 0)
 data['Constructivism'] = data['Constructivism'].apply(lambda x: 1 if x != "0" else 0)
