@@ -70,9 +70,5 @@ data = data.drop_duplicates(subset="Sentence",keep="first").reset_index()
 #Remove stopWords
 data['Sentence'] = data['Sentence'].apply(cleaning_stopWords)
 
-# Exploratory Data Analysis - afficher mot les plus courants
-wordCount_df = data['Sentence'].str.split(expand=True).stack().value_counts().reset_index()
-wordCount_df.columns = ['Word', 'Frequency']
-
 # Output the cleaned dataset in xlsx format
 data.to_excel('./output/output_cleaning.xlsx')
