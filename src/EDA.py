@@ -9,7 +9,10 @@ data = pd.read_excel('./output/output_cleaning.xlsx')
 # Exploratory Data Analysis - afficher mot les plus courants
 wordCount_df = data['Sentence'].str.split(expand=True).stack().value_counts().reset_index()
 wordCount_df.columns = ['Word', 'Frequency']
-#print(wordCount_df) - to see wordcount for all the sentences
+# Garder les 30 mots les plus utilisés
+wordCount_df = wordCount_df.nlargest(30, 'Frequency')
+wordCount_df.plot(kind='bar', x='Word')
+plt.show()
 
 # Créer texte pour chaque catégorie
 def textPerCategory(df, col):
