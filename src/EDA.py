@@ -1,4 +1,8 @@
 import pandas as pd
+import numpy as np
+from nltk.corpus import stopwords
+from nltk.tokenize import word_tokenize
+import matplotlib.pyplot as plt
 
 data = pd.read_excel('./output/output_cleaning.xlsx')    
 
@@ -34,11 +38,13 @@ textDict = {'CP': textCP, 'Constructivism': textConstructivism, 'Coping': textCo
 
 # token and wordcount pour chaque key
 for key, value in textDict.items():
-    globals()[f'wordCount{key}'] = pd.value_counts(np.array(word_tokenize(value)))
+    globals()[f'wordCount{key}'] = pd.value_counts(np.array(word_tokenize(value))).nlargest(20)
 
 # display word frequency for each category
-print(wordCountCoping)
-
 # word cloud
 
 # histograms
+wordCountED.plot(kind='bar')
+plt.show()
+
+# We can see that there is a lot of overlap in most used words per category 
