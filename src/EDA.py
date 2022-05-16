@@ -38,6 +38,7 @@ textDict = {'CP': textCP, 'Constructivism': textConstructivism, 'Coping': textCo
 
 # token and wordcount pour chaque key
 for key, value in textDict.items():
+    # return top 20 most used words for the category
     globals()[f'wordCount{key}'] = pd.value_counts(np.array(word_tokenize(value))).nlargest(20)
 
 # display word frequency for each category
@@ -45,6 +46,9 @@ for key, value in textDict.items():
 
 # histograms
 wordCountED.plot(kind='bar')
+wordCountCP.plot(kind='bar')
 plt.show()
 
+# faire une figure avec les 8 plots 
+# mettre en avant les mots qui sont dans plusieurs catégories 
 # We can see that there is a lot of overlap in most used words per category 
