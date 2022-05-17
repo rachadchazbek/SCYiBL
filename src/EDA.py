@@ -3,6 +3,7 @@ import numpy as np
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
 import matplotlib.pyplot as plt
+import itertools
 
 data = pd.read_excel('./output/output_cleaning.xlsx')    
 
@@ -103,7 +104,38 @@ commonER_Empow_Exposure_PERMA = commonElements(commonER_Empowerment,commonExposu
 
 # 3rd round
 commonAll = commonElements(commonCP_Cons_Coping_ED,commonER_Empow_Exposure_PERMA)
-print(commonAll)
+#print(commonAll)
 
-# life, things and felt are 3 words present in top 20 of every categories -> add to stopwords
-# We can see that there is a lot of overlap in most used words per category 
+# 1st Round EDA:
+# life, things and felt are 3 words present in top 20 of every categories -> added to stopwords
+
+# Trouver les mots qui sont unique à chaque catégorie
+arrayWordList = [wordListCP, wordListConstructivism, wordListCoping, wordListED,
+                wordListER, wordListEmpowerment, wordListExposure, wordListPERMA]
+
+def complementaryList(list1, array1):
+    if list1 in array1:
+        array1.remove(list1)
+    
+    compList = list(itertools.chain.from_iterable(array1))
+    return compList
+
+# Créer liste complémentaire pour chaque catégorie
+compListCP = complementaryList(wordListCP,arrayWordList)
+compListConstructivism = complementaryList(wordListConstructivism,arrayWordList)
+compListCoping = complementaryList(wordListCoping,arrayWordList)
+compListED = complementaryList(wordListED,arrayWordList)
+compListER = complementaryList(wordListER,arrayWordList)
+compListEmpowerment = complementaryList(wordListEmpowerment,arrayWordList)
+compListExposure = complementaryList(wordListExposure,arrayWordList)
+compListPERMA = complementaryList(wordListPERMA,arrayWordList)
+
+# Comparer la liste à sa liste complémentaire pour trouver les 
+# mots uniques à chaque catégorie
+
+# Similarité des phrases 
+
+# Longueur des phrases en moyenne
+# Longueur des phrases en moyenne par catégorie (see if it's an even distribution)
+# Ngrams 
+# mot avec le même tronc (realize, realized)
