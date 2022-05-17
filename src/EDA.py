@@ -4,6 +4,7 @@ from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
 import matplotlib.pyplot as plt
 import itertools
+import csv
 
 data = pd.read_excel('./output/output_cleaning.xlsx')    
 
@@ -110,15 +111,21 @@ commonAll = commonElements(commonCP_Cons_Coping_ED,commonER_Empow_Exposure_PERMA
 # life, things and felt are 3 words present in top 20 of every categories -> added to stopwords
 
 # Trouver les mots qui sont unique à chaque catégorie
+def complementaryList(list1, array1):
+    arrayCopy = array1.copy()
+    if list1 in arrayCopy:
+        arrayCopy.remove(list1)
+    
+    compList = list(itertools.chain.from_iterable(arrayCopy))
+    return compList
+
+# Cette fonction prend 2 listes comme argument et retourne 
+# Les éléments qui sont seulement dans la liste 1
+def uniqueElements(list1, list2):
+    return list(set(list1).difference(list2))
+
 arrayWordList = [wordListCP, wordListConstructivism, wordListCoping, wordListED,
                 wordListER, wordListEmpowerment, wordListExposure, wordListPERMA]
-
-def complementaryList(list1, array1):
-    if list1 in array1:
-        array1.remove(list1)
-    
-    compList = list(itertools.chain.from_iterable(array1))
-    return compList
 
 # Créer liste complémentaire pour chaque catégorie
 compListCP = complementaryList(wordListCP,arrayWordList)
@@ -132,6 +139,25 @@ compListPERMA = complementaryList(wordListPERMA,arrayWordList)
 
 # Comparer la liste à sa liste complémentaire pour trouver les 
 # mots uniques à chaque catégorie
+uniqueCP = uniqueElements(wordListCP, compListCP)
+uniqueConstructivism = uniqueElements(wordListConstructivism, compListConstructivism)
+uniqueCoping = uniqueElements(wordListCoping, compListCoping)
+uniqueED = uniqueElements(wordListED, compListED)
+uniqueER = uniqueElements(wordListER, compListER)
+uniqueEmpowerment = uniqueElements(wordListEmpowerment, compListEmpowerment)
+uniqueExposure = uniqueElements(wordListExposure, compListExposure)
+uniquePERMA = uniqueElements(wordListPERMA, compListPERMA)
+
+uniqueDict = {'CP': uniqueCP, 'Constructivism': uniqueConstructivism, 'Coping': uniqueCoping, 
+        'ED': uniqueED, 'ER': uniqueER, 'Empowerment':uniqueEmpowerment, 
+        'Exposure': uniqueExposure, 'PERMA':uniquePERMA}
+
+# Save words unique to each category in a file
+with open('uniqueWords.csv', 'w') as output:
+    writer = csv.writer(output, quoting=csv.QUOTE_MINIMAL)
+    writer.writerow(['Show words in top 20 that are specific to the category'])
+    for key, value in uniqueDict.items():
+        writer.writerow([key, value])
 
 # Similarité des phrases 
 
