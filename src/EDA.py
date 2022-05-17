@@ -12,7 +12,7 @@ wordCount_df.columns = ['Word', 'Frequency']
 # Garder les 30 mots les plus utilisés
 wordCount_df = wordCount_df.nlargest(30, 'Frequency')
 wordCount_df.plot(kind='bar', x='Word')
-#plt.show()
+plt.show()
 
 # Créer texte pour chaque catégorie
 def textPerCategory(df, col):
@@ -43,7 +43,6 @@ textDict = {'CP': textCP, 'Constructivism': textConstructivism, 'Coping': textCo
 for key, value in textDict.items():
     # return top 20 most used words for the category
     globals()[f'wordCount{key}'] = pd.value_counts(np.array(word_tokenize(value))).nlargest(20)
-    globals()[f'wordList{key}'] = globals()[f'wordCount{key}'].tolist()
 
 # display word frequency for each category
 # word cloud
@@ -103,8 +102,8 @@ commonCP_Cons_Coping_ED = commonElements(commonCP_Constructivism, commonCoping_E
 commonER_Empow_Exposure_PERMA = commonElements(commonER_Empowerment,commonExposure_PERMA)
 
 # 3rd round
-commonAll = commonElements(commonCP_Cons_Coping_ED,commonER_Empow_Exposure_PERMA )
+commonAll = commonElements(commonCP_Cons_Coping_ED,commonER_Empow_Exposure_PERMA)
 print(commonAll)
 
-# add to stopwords words in top20 of all categories
+# life, things and felt are 3 words present in top 20 of every categories -> add to stopwords
 # We can see that there is a lot of overlap in most used words per category 
