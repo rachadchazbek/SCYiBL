@@ -36,7 +36,6 @@ def getStopWords():
     else:
         ssl._create_default_https_context = _create_unverified_https_context
     # Stop words
-    nltk.download('stopwords')
     stop = stopwords.words('english')
     # Add stop word to array if necessary
     stopWords = ['id', 'im', 'ive']
