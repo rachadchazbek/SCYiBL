@@ -30,13 +30,15 @@ def getStopWords():
     # Stop words
     stop = stopwords.words('english')
     # Add stop word to array if necessary
-    stopWords = ['id', 'im', 'ive']
+    # Stopwords added after 1st round of EDA (life, things, felt) because they were in 
+    # top 20 words of every category
+    stopWords = ['id', 'im', 'ive', 'life', 'things', 'felt']
 
     for word in stopWords:
         stop.append(word)
     return stop
     
-words = getStopWords();
+words = getStopWords()
 cleaning_stopWords = lambda x: ' '.join([word for word in x.split() if word not in (words)])
 
 # // Main 
