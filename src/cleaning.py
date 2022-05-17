@@ -2,8 +2,6 @@ import pandas as pd
 import re
 import string
 import dvc.api as dvc
-import nltk
-import ssl
 from nltk.corpus import stopwords
 
 # // Functions
@@ -29,27 +27,18 @@ def checkMissingValues(df):
     return(df)
 
 def getStopWords(): 
-    try:
-        _create_unverified_https_context = ssl._create_unverified_context
-    except AttributeError:
-        pass
-    else:
-        ssl._create_default_https_context = _create_unverified_https_context
-    # Stop words
-    nltk.download('stopwords')
     stop = stopwords.words('english')
     # Add stop word to array if necessary
     stopWords = ['id', 'im', 'ive']
 
     for word in stopWords:
         stop.append(word)
-
     return stop
-
-cleaning_stopWords = lambda x: ' '.join([word for word in x.split() if word not in (getStopWords())])
+    
+words = getStopWords();
+cleaning_stopWords = lambda x: ' '.join([word for word in x.split() if word not in (words)])
 
 # // Main 
-
 with dvc.open(
         'data/data.xlsx',
         mode='rb'
