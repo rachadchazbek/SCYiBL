@@ -1,3 +1,4 @@
+from turtle import title
 import pandas as pd
 import numpy as np
 from nltk.corpus import stopwords
@@ -13,7 +14,7 @@ wordCount_df = data['Sentence'].str.split(expand=True).stack().value_counts().re
 wordCount_df.columns = ['Word', 'Frequency']
 # Garder les 30 mots les plus utilisés
 wordCount_df = wordCount_df.nlargest(30, 'Frequency')
-wordCount_df.plot(kind='bar', x='Word')
+wordCount_df.plot(kind='bar', x='Word', title="Total word count")
 plt.show()
 
 # Créer texte pour chaque catégorie
@@ -51,7 +52,8 @@ for key, value in textDict.items():
 
 # histograms
 # Figure avec les 8 plots
-# TO DO add axis title
+fig = plt.figure()
+fig.suptitle("Word count per category", fontsize=16)
 plt.subplot(4, 2, 1)
 plt.subplots_adjust(hspace=1)
 plt.title("CP", y = 0.6)
