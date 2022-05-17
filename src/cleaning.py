@@ -54,20 +54,20 @@ with dvc.open(
         mode='rb'
         ) as fd:
         data = pd.read_excel(fd, sheet_name='Sheet1')     
-data = data.astype('string') 
 
 # Change column name
 data.rename(columns={'ER/SF':'ER/SR'}, inplace=True)
 
+
 # Make binary dataset
-data['CP'] = data['CP'].apply(lambda x: 1 if x != "0" else 0)
-data['Constructivism'] = data['Constructivism'].apply(lambda x: 1 if x != "0" else 0)
-data['Coping'] = data['Coping'].apply(lambda x: 1 if x != "0" else 0)
-data['ED'] = data['ED'].apply(lambda x: 1 if x != "0" else 0)
-data['ER/SR'] = data['ER/SR'].apply(lambda x: 1 if x != "0" else 0)
-data['Empowerment'] = data['Empowerment'].apply(lambda x: 1 if x != "0" else 0)
-data['Exposure/Habit'] = data['Exposure/Habit'].apply(lambda x: 1 if x != "0" else 0)
-data['PERMA'] = data['PERMA'].apply(lambda x: 1 if x != "0" else 0)
+data['CP'] = data['CP'].apply(lambda x: 1 if x != 0 else 0)
+data['Constructivism'] = data['Constructivism'].apply(lambda x: 1 if x != 0 else 0)
+data['Coping'] = data['Coping'].apply(lambda x: 1 if x != 0 else 0)
+data['ED'] = data['ED'].apply(lambda x: 1 if x != 0 else 0)
+data['ER/SR'] = data['ER/SR'].apply(lambda x: 1 if x != 0 else 0)
+data['Empowerment'] = data['Empowerment'].apply(lambda x: 1 if x != 0 else 0)
+data['Exposure/Habit'] = data['Exposure/Habit'].apply(lambda x: 1 if x != 0 else 0)
+data['PERMA'] = data['PERMA'].apply(lambda x: 1 if x != 0 else 0)
 
 # Nettoyage
 data['Sentence'] = data['Sentence'].apply(nettoyage)
