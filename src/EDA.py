@@ -7,8 +7,6 @@ import matplotlib.pyplot as plt
 import itertools
 import csv
 
-from sklearn.tree import plot_tree
-
 data = pd.read_excel('./output/output_cleaning.xlsx')    
 
 # Exploratory Data Analysis - afficher mot les plus courants
