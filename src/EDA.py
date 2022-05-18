@@ -164,13 +164,73 @@ uniqueDict = {'CP': uniqueCP, 'Constructivism': uniqueConstructivism, 'Coping': 
 
 # Longueur des phrases
 sentenceLength = data['Sentence'].str.len()
-nbins = 5
+nbins = [0,50,100,150,200]
 plt.hist(sentenceLength, nbins, histtype ='bar', edgecolor='black', align='right')
 plt.title('Sentences length')
 plt.xlabel('Nb of char')
 plt.ylabel('Frequency')
 plt.show()
 
-# Longueur des phrases en moyenne par catégorie (see if it's an even distribution)
+# Longueur des phrases par catégorie (see if it's an even distribution)
+# créer un tableau contenant les phrases 
+# # attribués à la catégorie (colonne)
+def sentenceArrayPerCategory(df, col):
+    sentences = []
+    for i in range(len(df)): 
+        # Ajouter chaque phrase au texte de la colonne
+        if df.loc[i, col] == 1:
+            sentences.append(df.loc[i,'Sentence'])
+    return sentences
+
+# Prend en entrée un tableau de string et
+# retourne un tableau contenant le nbr de char
+# de chaque string dans le même ordre
+def nbChar(stringList):
+    res = []
+    for e in stringList:
+        res.append(len(e))
+    
+    return res
+
+
+# Appliquer pour chaque colonne
+sentencesLengthCP = nbChar(sentenceArrayPerCategory(data, 'CP'))
+sentencesLengthConstructivism = nbChar(sentenceArrayPerCategory(data,'Constructivism'))
+sentencesLengthCoping = nbChar(sentenceArrayPerCategory(data, 'Coping'))
+sentencesLengthED = nbChar(sentenceArrayPerCategory(data, 'ED'))
+sentencesLengthER = nbChar(sentenceArrayPerCategory(data, 'ER/SR'))
+sentencesLengthEmpowerment = nbChar(sentenceArrayPerCategory(data, 'Empowerment'))
+sentencesLengthExposure = nbChar(sentenceArrayPerCategory(data, 'Exposure/Habit'))
+sentencesLengthPERMA = nbChar(sentenceArrayPerCategory(data, 'PERMA'))
+
+plt.suptitle("Sentences length per category", fontsize=16)
+plt.subplot(4, 2, 1)
+plt.title("CP")
+plt.hist(sentencesLengthCP, nbins, histtype ='bar', edgecolor='black', align='right')
+plt.xlabel('Nb of char')
+plt.ylabel('Frequency')
+plt.subplot(4, 2, 2)
+plt.title("Constructivism")
+plt.hist(sentencesLengthConstructivism, nbins, histtype ='bar', edgecolor='black', align='right')
+plt.subplot(4, 2, 3)
+plt.title("Coping")
+plt.hist(sentencesLengthCoping, nbins, histtype ='bar', edgecolor='black', align='right')
+plt.subplot(4, 2, 4)
+plt.title("ED")
+plt.hist(sentencesLengthED, nbins, histtype ='bar', edgecolor='black', align='right')
+plt.subplot(4, 2, 5)
+plt.title("ER")
+plt.hist(sentencesLengthER, nbins, histtype ='bar', edgecolor='black', align='right')
+plt.subplot(4, 2, 6)
+plt.title("Empowerment")
+plt.hist(sentencesLengthEmpowerment, nbins, histtype ='bar', edgecolor='black', align='right')
+plt.subplot(4, 2, 7)
+plt.title("Exposure")
+plt.hist(sentencesLengthExposure, nbins, histtype ='bar', edgecolor='black', align='right')
+plt.subplot(4, 2, 8)
+plt.title("PERMA")
+plt.hist(sentencesLengthPERMA, nbins, histtype ='bar', edgecolor='black', align='right')
+plt.show()
+
 # Ngrams 
 # mot avec le même tronc (realize, realized)
