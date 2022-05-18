@@ -1,7 +1,7 @@
-from turtle import title
-import spacy
 import pandas as pd
 import numpy as np
+import nltk
+nltk.download('punkt')
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
 import matplotlib.pyplot as plt
@@ -227,11 +227,18 @@ plt.show()
 
 # Similarité des phrases
 # Évaluer si les phrases similaires ont la même classification par catégorie
-nlp = spacy.load('en_core_web_md')
-token1 = nlp("love writing use poetry express feel")
-token2 = nlp("tired ruining every good moment relationships cant get ahold")
-  
-print("Similarity:", token1.similarity(token2))
+
+# List of sentences
+sentencesExposure = sentenceArrayPerCategory(data, 'Exposure/Habit')
+
+# tokenized version of sentences
+tokenized_sentences= []
+for s in sentencesExposure:
+    tokenized_sentences.append(word_tokenize(s))
+
+# cosine similarity
+def cosine(u, v):
+    return np.dot(u, v) / (np.linalg.norm(u) * np.linalg.norm(v))
 
 # Ngrams 
 # mot avec le même tronc (realize, realized)
