@@ -7,6 +7,8 @@ import matplotlib.pyplot as plt
 import itertools
 import csv
 
+from sklearn.tree import plot_tree
+
 data = pd.read_excel('./output/output_cleaning.xlsx')    
 
 # Exploratory Data Analysis - afficher mot les plus courants
@@ -15,6 +17,7 @@ wordCount_df.columns = ['Word', 'Frequency']
 # Garder les 30 mots les plus utilisés
 wordCount_df = wordCount_df.nlargest(30, 'Frequency')
 wordCount_df.plot(kind='bar', x='Word', title="Total word count")
+plt.show()
 
 # Créer texte pour chaque catégorie
 def textPerCategory(df, col):
@@ -51,8 +54,7 @@ for key, value in textDict.items():
 
 # histograms
 # Figure avec les 8 plots
-fig = plt.figure()
-fig.suptitle("Word count per category", fontsize=16)
+plt.suptitle("Word count per category", fontsize=16)
 plt.subplot(4, 2, 1)
 plt.subplots_adjust(hspace=1)
 plt.title("CP", y = 0.6)
@@ -78,6 +80,8 @@ wordCountExposure.plot(kind='bar')
 plt.subplot(4, 2, 8)
 plt.title("PERMA", y = 0.6)
 wordCountPERMA.plot(kind='bar')
+
+plt.show()
 
 # Transform wordCount Series to Dataframe (easier to merge)
 # And creat list of top20 words for each category
@@ -160,9 +164,13 @@ uniqueDict = {'CP': uniqueCP, 'Constructivism': uniqueConstructivism, 'Coping': 
 
 # Similarité des phrases 
 
-# Longueur des phrases en moyenne
+# Longueur des phrases
 sentenceLength = data['Sentence'].str.len()
-sentenceLength.plot(kind='hist')
+nbins = 5
+plt.hist(sentenceLength, nbins, histtype ='bar', edgecolor='black', align='right')
+plt.title('Sentences length')
+plt.xlabel('Nb of char')
+plt.ylabel('Frequency')
 plt.show()
 
 # Longueur des phrases en moyenne par catégorie (see if it's an even distribution)
