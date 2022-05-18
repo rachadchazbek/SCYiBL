@@ -15,7 +15,6 @@ wordCount_df.columns = ['Word', 'Frequency']
 # Garder les 30 mots les plus utilisés
 wordCount_df = wordCount_df.nlargest(30, 'Frequency')
 wordCount_df.plot(kind='bar', x='Word', title="Total word count")
-plt.show()
 
 # Créer texte pour chaque catégorie
 def textPerCategory(df, col):
@@ -79,8 +78,6 @@ wordCountExposure.plot(kind='bar')
 plt.subplot(4, 2, 8)
 plt.title("PERMA", y = 0.6)
 wordCountPERMA.plot(kind='bar')
-
-plt.show()
 
 # Transform wordCount Series to Dataframe (easier to merge)
 # And creat list of top20 words for each category
@@ -155,15 +152,19 @@ uniqueDict = {'CP': uniqueCP, 'Constructivism': uniqueConstructivism, 'Coping': 
         'Exposure': uniqueExposure, 'PERMA':uniquePERMA}
 
 # Save words unique to each category in a file
-with open('uniqueWords.csv', 'w') as output:
-    writer = csv.writer(output, quoting=csv.QUOTE_MINIMAL)
-    writer.writerow(['Show words in top 20 that are specific to the category'])
-    for key, value in uniqueDict.items():
-        writer.writerow([key, value])
+#with open('uniqueWords.csv', 'w') as output:
+#    writer = csv.writer(output, quoting=csv.QUOTE_MINIMAL)
+#    writer.writerow(['Show words in top 20 that are specific to the category'])
+#    for key, value in uniqueDict.items():
+#        writer.writerow([key, value])
 
 # Similarité des phrases 
 
 # Longueur des phrases en moyenne
+sentenceLength = data['Sentence'].str.len()
+sentenceLength.plot(kind='hist')
+plt.show()
+
 # Longueur des phrases en moyenne par catégorie (see if it's an even distribution)
 # Ngrams 
 # mot avec le même tronc (realize, realized)
