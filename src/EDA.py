@@ -1,4 +1,5 @@
 from turtle import title
+import spacy
 import pandas as pd
 import numpy as np
 from nltk.corpus import stopwords
@@ -160,8 +161,6 @@ uniqueDict = {'CP': uniqueCP, 'Constructivism': uniqueConstructivism, 'Coping': 
 #    for key, value in uniqueDict.items():
 #        writer.writerow([key, value])
 
-# Similarité des phrases 
-
 # Longueur des phrases
 sentenceLength = data['Sentence'].str.len()
 nbins = [0,50,100,150,200]
@@ -173,7 +172,7 @@ plt.show()
 
 # Longueur des phrases par catégorie (see if it's an even distribution)
 # créer un tableau contenant les phrases 
-# # attribués à la catégorie (colonne)
+# attribués à la catégorie (colonne)
 def sentenceArrayPerCategory(df, col):
     sentences = []
     for i in range(len(df)): 
@@ -203,34 +202,36 @@ sentencesLengthEmpowerment = nbChar(sentenceArrayPerCategory(data, 'Empowerment'
 sentencesLengthExposure = nbChar(sentenceArrayPerCategory(data, 'Exposure/Habit'))
 sentencesLengthPERMA = nbChar(sentenceArrayPerCategory(data, 'PERMA'))
 
-plt.suptitle("Sentences length per category", fontsize=16)
-plt.subplot(4, 2, 1)
-plt.title("CP")
-plt.hist(sentencesLengthCP, nbins, histtype ='bar', edgecolor='black', align='right')
-plt.xlabel('Nb of char')
-plt.ylabel('Frequency')
-plt.subplot(4, 2, 2)
-plt.title("Constructivism")
-plt.hist(sentencesLengthConstructivism, nbins, histtype ='bar', edgecolor='black', align='right')
-plt.subplot(4, 2, 3)
-plt.title("Coping")
-plt.hist(sentencesLengthCoping, nbins, histtype ='bar', edgecolor='black', align='right')
-plt.subplot(4, 2, 4)
-plt.title("ED")
-plt.hist(sentencesLengthED, nbins, histtype ='bar', edgecolor='black', align='right')
-plt.subplot(4, 2, 5)
-plt.title("ER")
-plt.hist(sentencesLengthER, nbins, histtype ='bar', edgecolor='black', align='right')
-plt.subplot(4, 2, 6)
-plt.title("Empowerment")
-plt.hist(sentencesLengthEmpowerment, nbins, histtype ='bar', edgecolor='black', align='right')
-plt.subplot(4, 2, 7)
-plt.title("Exposure")
-plt.hist(sentencesLengthExposure, nbins, histtype ='bar', edgecolor='black', align='right')
-plt.subplot(4, 2, 8)
-plt.title("PERMA")
-plt.hist(sentencesLengthPERMA, nbins, histtype ='bar', edgecolor='black', align='right')
+fig, ax = plt.subplots(4,2, sharex='col')
+fig.subplots_adjust(hspace=0.4)
+fig.suptitle('Sentences length per category', fontsize=20)
+fig.supxlabel("Number of characters", fontsize=18)
+fig.supylabel("Frequency", fontsize=18)
+ax[0][0].set_title("CP")
+ax[0][0].hist(sentencesLengthCP, nbins, histtype ='bar', edgecolor='black', align='right')
+ax[1][0].set_title("Coping")
+ax[1][0].hist(sentencesLengthCoping, nbins, histtype ='bar', edgecolor='black', align='right')
+ax[2][0].set_title("ER")
+ax[2][0].hist(sentencesLengthER, nbins, histtype ='bar', edgecolor='black', align='right')
+ax[3][0].set_title("Exposure")
+ax[3][0].hist(sentencesLengthExposure, nbins, histtype ='bar', edgecolor='black', align='right')
+ax[0][1].set_title("Constructivism")
+ax[0][1].hist(sentencesLengthConstructivism, nbins, histtype ='bar', edgecolor='black', align='right')
+ax[1][1].set_title("ED")
+ax[1][1].hist(sentencesLengthED, nbins, histtype ='bar', edgecolor='black', align='right')
+ax[2][1].set_title("Empowerment")
+ax[2][1].hist(sentencesLengthEmpowerment, nbins, histtype ='bar', edgecolor='black', align='right')
+ax[3][1].set_title("PERMA")
+ax[3][1].hist(sentencesLengthPERMA, nbins, histtype ='bar', edgecolor='black', align='right')
 plt.show()
+
+# Similarité des phrases
+# Évaluer si les phrases similaires ont la même classification par catégorie
+nlp = spacy.load('en_core_web_md')
+token1 = nlp("love writing use poetry express feel")
+token2 = nlp("tired ruining every good moment relationships cant get ahold")
+  
+print("Similarity:", token1.similarity(token2))
 
 # Ngrams 
 # mot avec le même tronc (realize, realized)
