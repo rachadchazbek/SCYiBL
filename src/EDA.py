@@ -7,6 +7,7 @@ from nltk.tokenize import word_tokenize
 import matplotlib.pyplot as plt
 import itertools
 import csv
+from gensim.models.doc2vec import Doc2Vec, TaggedDocument
 
 data = pd.read_excel('./output/output_cleaning.xlsx')    
 
@@ -225,6 +226,7 @@ ax[3][1].set_title("PERMA")
 ax[3][1].hist(sentencesLengthPERMA, nbins, histtype ='bar', edgecolor='black', align='right')
 plt.show()
 
+'''
 # Similarité des phrases
 # Évaluer si les phrases similaires ont la même classification par catégorie
 
@@ -240,5 +242,22 @@ for s in sentencesExposure:
 def cosine(u, v):
     return np.dot(u, v) / (np.linalg.norm(u) * np.linalg.norm(v))
 
+tagged_data = [TaggedDocument(d, [i]) for i, d in enumerate(tokenized_sentences)]
+
+## Train doc2vec model
+model = Doc2Vec(tagged_data, vector_size = 20, window = 2, min_count = 1, epochs = 100)
+
+vector_size = Dimensionality of the feature vectors.
+window = The maximum distance between the current and predicted word within a sentence.
+min_count = Ignores all words with total frequency lower than this.
+alpha = The initial learning rate.
+
+# Test doc2vec model
+test_doc = word_tokenize("I got used to the idea of perfection".lower())
+test_doc_vector = model.infer_vector(test_doc)
+print(model.docvecs.most_similar(positive = [test_doc_vector]))
+
+positive = List of sentences that contribute positively.
 # Ngrams 
 # mot avec le même tronc (realize, realized)
+'''
