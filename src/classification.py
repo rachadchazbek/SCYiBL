@@ -37,11 +37,15 @@ def create_multi_model(num_filters, kernel_size, vocab_size, embedding_dim, maxl
 xls = pd.read_excel("./output/output_cleaning.xlsx") 
 columns = ('CP', 'Constructivism', 'Coping', 'ED', 'ER/SF', 'Empowerment', 'Exposure/Habit', 'PERMA')
 sentences = xls['Sentence']
+rows = ['1', '0', '%']
 
-# TODO move to evaluate file
+# TODO move classes and classes_bin to evaluate file
 classes = ('CP', 'Constructivism', 'Coping', 'ED', 'ER/SF', 'Empowerment', 'Exposure/Habit', 'PERMA')
 classes_bin = ('CPb', 'Constructivismb', 'Copingb', 'EDb', 'ER/SFb', 'Empowermentb', 'Exposure/Habitb', 'PERMAb')
 
+y = pd.concat([xls['CPb'], ['Constructivismb'], xls['Copingb'],  xls['EDb'],
+               xls['ER/SFb'], xls['Empowermentb'], xls['Exposure/Habitb'], xls['PERMAb']],
+              axis=1)
 
 sentences_train, sentences_test, y_train, y_test = train_test_split(sentences, y, test_size=0.25, random_state=1000)
 
@@ -104,6 +108,3 @@ Accuracy per label :
         output_string += f"   {classes[i]} = {round(f1_scores[i], 2)}\n"
     print(output_string)
     f.write(output_string)
-
-
-
