@@ -35,13 +35,13 @@ def create_multi_model(num_filters, kernel_size, vocab_size, embedding_dim, maxl
     return model
 
 xls = pd.read_excel("./output/output_cleaning.xlsx") 
-columns = ('CP', 'Constructivism', 'Coping', 'ED', 'ER/SF', 'Empowerment', 'Exposure/Habit', 'PERMA')
+columns = ('CP', 'Constructivism', 'Coping', 'ED', 'ER/SR', 'Empowerment', 'Exposure/Habit', 'PERMA')
 sentences = xls['Sentence']
 rows = ['1', '0', '%']
 
 # TODO move classes and classes_bin to evaluate file
-classes = ('CP', 'Constructivism', 'Coping', 'ED', 'ER/SF', 'Empowerment', 'Exposure/Habit', 'PERMA')
-classes_bin = ('CPb', 'Constructivismb', 'Copingb', 'EDb', 'ER/SFb', 'Empowermentb', 'Exposure/Habitb', 'PERMAb')
+classes = ('CP', 'Constructivism', 'Coping', 'ED', 'ER/SR', 'Empowerment', 'Exposure/Habit', 'PERMA')
+classes_bin = ('CPb', 'Constructivismb', 'Copingb', 'EDb', 'ER/SRb', 'Empowermentb', 'Exposure/Habitb', 'PERMAb')
 
 y = pd.concat([xls['CPb'], ['Constructivismb'], xls['Copingb'],  xls['EDb'],
                xls['ER/SFb'], xls['Empowermentb'], xls['Exposure/Habitb'], xls['PERMAb']],
