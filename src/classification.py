@@ -59,11 +59,11 @@ X_test = tokenizer.texts_to_sequences(sentences_test)
 vocab_size = len(tokenizer.word_index) + 1
 
 # Main settings
-# TODO: Should be variables in each experiment USING DVC 
+# TODO: Should be variables for experiments USING DVC 
 epochs = 5
 embedding_dim = 50
 maxlen = 100
-output_file = 'output.txt'
+output_file = './output/output.txt'
 
 # Pad sequences with zeros
 X_train = pad_sequences(X_train, padding='post', maxlen=maxlen)
