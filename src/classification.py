@@ -39,10 +39,6 @@ columns = ('CP', 'Constructivism', 'Coping', 'ED', 'ER/SR', 'Empowerment', 'Expo
 sentences = xls['Sentence']
 rows = ['1', '0', '%']
 
-# TODO move classes and classes_bin to evaluate file
-classes = ('CP', 'Constructivism', 'Coping', 'ED', 'ER/SR', 'Empowerment', 'Exposure/Habit', 'PERMA')
-classes_bin = ('CPb', 'Constructivismb', 'Copingb', 'EDb', 'ER/SRb', 'Empowermentb', 'Exposure/Habitb', 'PERMAb')
-
 y = pd.concat([xls['CPb'], ['Constructivismb'], xls['Copingb'],  xls['EDb'],
                xls['ER/SFb'], xls['Empowermentb'], xls['Exposure/Habitb'], xls['PERMAb']],
               axis=1)
@@ -82,29 +78,3 @@ model = KerasClassifier(num_filters=32, kernel_size=7,
 grid = RandomizedSearchCV(estimator=model, param_distributions=param_grid,
                           cv=4, verbose=1, n_iter=5)
 grid_result = grid.fit(X_train, y_train)
-
-
-#TODO move to a new evaluate.py file
-# Evaluate testing set
-test_accuracy = grid.score(X_test, y_test)
-y_pred = grid.predict(X_test)
-f1_scores = f1_score(y_test, y_pred, average=None)
-print('F1-score : ', )
-for i in range(len(classes)):
-    print(classes[i], accuracy_score(y_test[classes_bin[i]], y_pred[:, i]))
-print(coverage_error(y_test, y_pred))
-
-# Save and evaluate results
-with open(output_file, 'a') as f:
-    output_string = f"""
-Coverage error = {round(coverage_error(y_test, y_pred), 2)}
-Global accuracy = {round(test_accuracy, 2)}
-Accuracy per label :
-"""
-    for i in range(len(classes)):
-        output_string += f"   {classes[i]} = {round(accuracy_score(y_test[classes_bin[i]], y_pred[:, i]), 2)}\n"
-    output_string += "F1-scores :\n"
-    for i in range(len(classes)):
-        output_string += f"   {classes[i]} = {round(f1_scores[i], 2)}\n"
-    print(output_string)
-    f.write(output_string)
