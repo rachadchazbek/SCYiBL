@@ -1,13 +1,11 @@
 import pandas as pd
 import numpy as np
-import nltk
-nltk.download('punkt')
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
 import matplotlib.pyplot as plt
 import itertools
 import csv
-from gensim.models.doc2vec import Doc2Vec, TaggedDocument
+import seaborn as sns
 
 data = pd.read_excel('./output/output_cleaning.xlsx')    
 
@@ -48,12 +46,11 @@ textDict = {'CP': textCP, 'Constructivism': textConstructivism, 'Coping': textCo
 for key, value in textDict.items():
     # return top 20 most used words for the category
     globals()[f'wordCount{key}'] = pd.value_counts(np.array(word_tokenize(value))).nlargest(20)
-
-# display word frequency for each category
-# word cloud
+    # Normalize word count (divide by nb of words per category and in %)
+    globals()[f'normalized_wordCount{key}'] = globals()[f'wordCount{key}'].div(len(value)/100)
 
 # histograms
-# Figure avec les 8 plots
+# Figure avec les 8 plots - valeur absolue
 plt.suptitle("Word count per category", fontsize=16)
 plt.subplot(4, 2, 1)
 plt.subplots_adjust(hspace=1)
@@ -80,7 +77,35 @@ wordCountExposure.plot(kind='bar')
 plt.subplot(4, 2, 8)
 plt.title("PERMA", y = 0.6)
 wordCountPERMA.plot(kind='bar')
+plt.show()
 
+# Figure avec les 8 plots - valeur normalisée
+plt.suptitle("Word count per category (Normalized)", fontsize=16)
+plt.subplot(4, 2, 1)
+plt.subplots_adjust(hspace=1)
+plt.title("CP", y = 0.6)
+normalized_wordCountCP.plot(kind='bar')
+plt.subplot(4, 2, 2)
+plt.title("Constructivism", y = 0.6)
+normalized_wordCountConstructivism.plot(kind='bar')
+plt.subplot(4, 2, 3)
+plt.title("Coping", y = 0.6)
+normalized_wordCountCoping.plot(kind='bar')
+plt.subplot(4, 2, 4)
+plt.title("ED", y = 0.6)
+normalized_wordCountED.plot(kind='bar')
+plt.subplot(4, 2, 5)
+plt.title("ER/SR", y = 0.6)
+normalized_wordCountER.plot(kind='bar')
+plt.subplot(4, 2, 6)
+plt.title("Empowerment", y = 0.6)
+normalized_wordCountEmpowerment.plot(kind='bar')
+plt.subplot(4, 2, 7)
+plt.title("Exposure", y = 0.6)
+normalized_wordCountExposure.plot(kind='bar')
+plt.subplot(4, 2, 8)
+plt.title("PERMA", y = 0.6)
+normalized_wordCountPERMA.plot(kind='bar')
 plt.show()
 
 # Transform wordCount Series to Dataframe (easier to merge)
@@ -113,7 +138,7 @@ commonAll = commonElements(commonCP_Cons_Coping_ED,commonER_Empow_Exposure_PERMA
 # 1st Round EDA:
 # life, things and felt are 3 words present in top 20 of every categories -> added to stopwords
 
-# Trouver les mots qui sont unique à chaque catégorie
+# Trouver les mots qui sont uniques à chaque catégorie
 def complementaryList(list1, array1):
     arrayCopy = array1.copy()
     if list1 in arrayCopy:
@@ -225,39 +250,3 @@ ax[2][1].hist(sentencesLengthEmpowerment, nbins, histtype ='bar', edgecolor='bla
 ax[3][1].set_title("PERMA")
 ax[3][1].hist(sentencesLengthPERMA, nbins, histtype ='bar', edgecolor='black', align='right')
 plt.show()
-
-'''
-# Similarité des phrases
-# Évaluer si les phrases similaires ont la même classification par catégorie
-
-# List of sentences
-sentencesExposure = sentenceArrayPerCategory(data, 'Exposure/Habit')
-
-# tokenized version of sentences
-tokenized_sentences= []
-for s in sentencesExposure:
-    tokenized_sentences.append(word_tokenize(s))
-
-# cosine similarity
-def cosine(u, v):
-    return np.dot(u, v) / (np.linalg.norm(u) * np.linalg.norm(v))
-
-tagged_data = [TaggedDocument(d, [i]) for i, d in enumerate(tokenized_sentences)]
-
-## Train doc2vec model
-model = Doc2Vec(tagged_data, vector_size = 20, window = 2, min_count = 1, epochs = 100)
-
-vector_size = Dimensionality of the feature vectors.
-window = The maximum distance between the current and predicted word within a sentence.
-min_count = Ignores all words with total frequency lower than this.
-alpha = The initial learning rate.
-
-# Test doc2vec model
-test_doc = word_tokenize("I got used to the idea of perfection".lower())
-test_doc_vector = model.infer_vector(test_doc)
-print(model.docvecs.most_similar(positive = [test_doc_vector]))
-
-positive = List of sentences that contribute positively.
-# Ngrams 
-# mot avec le même tronc (realize, realized)
-'''
