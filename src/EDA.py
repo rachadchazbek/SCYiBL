@@ -234,3 +234,12 @@ sentencesLengthPerCat = pd.DataFrame(dict([ (k,pd.Series(v)) for k,v in nbCharDi
 fig = sns.violinplot(data=sentencesLengthPerCat, inner='quartile')
 fig.set(ylabel='Nb of char', title='Sentence length')
 plt.show()
+
+# Relation croisée entre les catégories 
+# Corrélation de la classification inter-catégorie des phrases
+corr_matrix = data.corr(method='pearson')
+corr_matrix = corr_matrix.drop(columns=['Unnamed: 0', 'index'], index=['Unnamed: 0', 'index'])
+# Generate a mask for the upper triangle (bc of symmetry)
+mask = np.triu(np.ones_like(corr_matrix, dtype=bool))
+sns.heatmap(corr_matrix, annot=True, mask=mask)
+plt.show()
