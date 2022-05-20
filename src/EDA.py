@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import itertools
 import csv
 import seaborn as sns
+from scipy.stats import chi2_contingency, chi2
 
 data = pd.read_excel('./output/output_cleaning.xlsx')    
 
@@ -235,11 +236,45 @@ fig = sns.violinplot(data=sentencesLengthPerCat, inner='quartile')
 fig.set(ylabel='Nb of char', title='Sentence length')
 plt.show()
 
+
 # Relation croisée entre les catégories 
 # Corrélation de la classification inter-catégorie des phrases
-corr_matrix = data.corr(method='pearson')
-corr_matrix = corr_matrix.drop(columns=['Unnamed: 0', 'index'], index=['Unnamed: 0', 'index'])
+#corr_matrix = data.corr(method='pearson')
+#corr_matrix = corr_matrix.drop(columns=['Unnamed: 0', 'index'], index=['Unnamed: 0', 'index'])
 # Generate a mask for the upper triangle (bc of symmetry)
-mask = np.triu(np.ones_like(corr_matrix, dtype=bool))
-sns.heatmap(corr_matrix, annot=True, mask=mask)
-plt.show()
+#mask = np.triu(np.ones_like(corr_matrix, dtype=bool))
+#sns.heatmap(corr_matrix, annot=True, mask=mask)
+#plt.show()
+
+corr = 0
+ind = 0
+for index, row in data.iterrows():
+    if (row['Empowerment']==1 and row['PERMA']==0) or (row['Empowerment']==0 and row['PERMA']==1) or (row['Empowerment'] == 1 and row['PERMA'] == 1):
+        ind += 1 
+    if (row['Empowerment'] == 1 and row['PERMA'] == 1):
+        corr += 1
+print(corr/ind)
+
+CrosstabResult=pd.crosstab(index=data['PERMA'],columns=data['Empowerment'])
+print(CrosstabResult)
+
+# Performing Chi-sq test
+stat, p, dof, expected = chi2_contingency(CrosstabResult)
+ 
+ # Assumption(H0): The two columns are NOT related to each other
+# P-Value is the Probability of H0 being True
+# If P-Value>0.05 then only we Accept the assumption(H0)
+prob = 0.95
+critical = chi2.ppf(prob, dof)
+print('probability=%.3f, critical=%.3f, stat=%.3f' % (prob, critical, stat))
+if abs(stat) >= critical:
+	print('Dependent (reject H0)')
+else:
+	print('Independent (fail to reject H0)')
+
+# interpret p-value
+alpha = 1.0 - prob
+if p <= alpha:
+	print('Dependent (reject H0)')
+else:
+	print('Independent (fail to reject H0)')
