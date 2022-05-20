@@ -235,4 +235,3 @@ nbCharDict = {'CP': sentencesLengthCP, 'Constructivism': sentencesLengthConstruc
 sentencesLengthPerCat = pd.DataFrame(dict([ (k,pd.Series(v)) for k,v in nbCharDict.items() ]))
 print(sentencesLengthPerCat.columns)
 fig = sns.violinplot(x=sentencesLengthPerCat, inner="quartile")
-plt.show()
