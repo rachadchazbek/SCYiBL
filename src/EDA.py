@@ -189,11 +189,10 @@ uniqueDict = {'CP': uniqueCP, 'Constructivism': uniqueConstructivism, 'Coping': 
 
 # Longueur des phrases
 sentenceLength = data['Sentence'].str.len()
-nbins = [0,50,100,150,200]
-plt.hist(sentenceLength, nbins, histtype ='bar', edgecolor='black', align='right')
-plt.title('Sentences length')
-plt.xlabel('Nb of char')
-plt.ylabel('Frequency')
+sns.set_theme(style="whitegrid")
+p = sns.violinplot(x=sentenceLength, inner="quartile",  scale="count")
+p.set(xlabel='Nb of Char', title="Sentences Length")
+sns.despine(left=True)
 plt.show()
 
 # Longueur des phrases par catégorie (see if it's an even distribution)
@@ -228,25 +227,12 @@ sentencesLengthEmpowerment = nbChar(sentenceArrayPerCategory(data, 'Empowerment'
 sentencesLengthExposure = nbChar(sentenceArrayPerCategory(data, 'Exposure/Habit'))
 sentencesLengthPERMA = nbChar(sentenceArrayPerCategory(data, 'PERMA'))
 
-fig, ax = plt.subplots(4,2, sharex='col')
-fig.subplots_adjust(hspace=0.4)
-fig.suptitle('Sentences length per category', fontsize=20)
-fig.supxlabel("Number of characters", fontsize=18)
-fig.supylabel("Frequency", fontsize=18)
-ax[0][0].set_title("CP")
-ax[0][0].hist(sentencesLengthCP, nbins, histtype ='bar', edgecolor='black', align='right')
-ax[1][0].set_title("Coping")
-ax[1][0].hist(sentencesLengthCoping, nbins, histtype ='bar', edgecolor='black', align='right')
-ax[2][0].set_title("ER")
-ax[2][0].hist(sentencesLengthER, nbins, histtype ='bar', edgecolor='black', align='right')
-ax[3][0].set_title("Exposure")
-ax[3][0].hist(sentencesLengthExposure, nbins, histtype ='bar', edgecolor='black', align='right')
-ax[0][1].set_title("Constructivism")
-ax[0][1].hist(sentencesLengthConstructivism, nbins, histtype ='bar', edgecolor='black', align='right')
-ax[1][1].set_title("ED")
-ax[1][1].hist(sentencesLengthED, nbins, histtype ='bar', edgecolor='black', align='right')
-ax[2][1].set_title("Empowerment")
-ax[2][1].hist(sentencesLengthEmpowerment, nbins, histtype ='bar', edgecolor='black', align='right')
-ax[3][1].set_title("PERMA")
-ax[3][1].hist(sentencesLengthPERMA, nbins, histtype ='bar', edgecolor='black', align='right')
+nbCharDict = {'CP': sentencesLengthCP, 'Constructivism': sentencesLengthConstructivism, 
+            'Coping': sentencesLengthCoping, 'ED': sentencesLengthED, 
+            'ER': sentencesLengthER, 'Empowerment': sentencesLengthEmpowerment,
+            'Exposure': sentencesLengthExposure, 'PERMA': sentencesLengthPERMA}
+
+sentencesLengthPerCat = pd.DataFrame(dict([ (k,pd.Series(v)) for k,v in nbCharDict.items() ]))
+print(sentencesLengthPerCat.columns)
+fig = sns.violinplot(x=sentencesLengthPerCat, inner="quartile")
 plt.show()
