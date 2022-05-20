@@ -15,7 +15,6 @@ wordCount_df.columns = ['Word', 'Frequency']
 # Garder les 30 mots les plus utilisés
 wordCount_df = wordCount_df.nlargest(30, 'Frequency')
 wordCount_df.plot(kind='bar', x='Word', title="Total word count")
-plt.show()
 
 # Créer texte pour chaque catégorie
 def textPerCategory(df, col):
@@ -77,7 +76,6 @@ wordCountExposure.plot(kind='bar')
 plt.subplot(4, 2, 8)
 plt.title("PERMA", y = 0.6)
 wordCountPERMA.plot(kind='bar')
-plt.show()
 
 # Figure avec les 8 plots - valeur normalisée
 plt.suptitle("Word count per category (Normalized)", fontsize=16)
@@ -233,5 +231,6 @@ nbCharDict = {'CP': sentencesLengthCP, 'Constructivism': sentencesLengthConstruc
             'Exposure': sentencesLengthExposure, 'PERMA': sentencesLengthPERMA}
 
 sentencesLengthPerCat = pd.DataFrame(dict([ (k,pd.Series(v)) for k,v in nbCharDict.items() ]))
-print(sentencesLengthPerCat.columns)
-fig = sns.violinplot(x=sentencesLengthPerCat, inner="quartile")
+fig = sns.violinplot(data=sentencesLengthPerCat, inner='quartile')
+fig.set(ylabel='Nb of char', title='Sentence length')
+plt.show()
