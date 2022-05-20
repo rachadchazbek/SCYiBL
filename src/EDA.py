@@ -239,42 +239,25 @@ plt.show()
 
 # Relation croisée entre les catégories 
 # Corrélation de la classification inter-catégorie des phrases
-#corr_matrix = data.corr(method='pearson')
-#corr_matrix = corr_matrix.drop(columns=['Unnamed: 0', 'index'], index=['Unnamed: 0', 'index'])
+def get_corr(df, col1, col2):
+    CrosstabResult=pd.crosstab(index=df[col1],columns=df[col2])
+    
+    return CrosstabResult[1][1]/(CrosstabResult[1][0]+CrosstabResult[0][1]+CrosstabResult[1][1])
+
+get_corr(data, 'Empowerment', 'PERMA')
+
+classes = ('CP', 'Constructivism', 'Coping', 'ED', 'ER/SR', 'Empowerment', 'Exposure/Habit', 'PERMA')
+
+corr_matrix = {}
+for col1 in classes:
+    for col2 in classes:
+        if col1 == col2 or f'{col2}-{col1}' in corr_matrix:
+            continue
+        corr_matrix[f'{col1}-{col2}'] = get_corr(data, col1, col2)
+print(len(corr_matrix))
+
+#corr_matrix = 
 # Generate a mask for the upper triangle (bc of symmetry)
 #mask = np.triu(np.ones_like(corr_matrix, dtype=bool))
 #sns.heatmap(corr_matrix, annot=True, mask=mask)
 #plt.show()
-
-corr = 0
-ind = 0
-for index, row in data.iterrows():
-    if (row['Empowerment']==1 and row['PERMA']==0) or (row['Empowerment']==0 and row['PERMA']==1) or (row['Empowerment'] == 1 and row['PERMA'] == 1):
-        ind += 1 
-    if (row['Empowerment'] == 1 and row['PERMA'] == 1):
-        corr += 1
-print(corr/ind)
-
-CrosstabResult=pd.crosstab(index=data['PERMA'],columns=data['Empowerment'])
-print(CrosstabResult)
-
-# Performing Chi-sq test
-stat, p, dof, expected = chi2_contingency(CrosstabResult)
- 
- # Assumption(H0): The two columns are NOT related to each other
-# P-Value is the Probability of H0 being True
-# If P-Value>0.05 then only we Accept the assumption(H0)
-prob = 0.95
-critical = chi2.ppf(prob, dof)
-print('probability=%.3f, critical=%.3f, stat=%.3f' % (prob, critical, stat))
-if abs(stat) >= critical:
-	print('Dependent (reject H0)')
-else:
-	print('Independent (fail to reject H0)')
-
-# interpret p-value
-alpha = 1.0 - prob
-if p <= alpha:
-	print('Dependent (reject H0)')
-else:
-	print('Independent (fail to reject H0)')
