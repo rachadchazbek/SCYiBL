@@ -16,6 +16,7 @@ wordCount_df.columns = ['Word', 'Frequency']
 # Garder les 30 mots les plus utilisés
 wordCount_df = wordCount_df.nlargest(30, 'Frequency')
 wordCount_df.plot(kind='bar', x='Word', title="Total word count")
+plt.savefig("./output/EDA/totalWordCount.png")
 
 # Créer texte pour chaque catégorie
 def textPerCategory(df, col):
@@ -77,6 +78,7 @@ wordCountExposure.plot(kind='bar')
 plt.subplot(4, 2, 8)
 plt.title("PERMA", y = 0.6)
 wordCountPERMA.plot(kind='bar')
+plt.savefig("./output/EDA/wordCountCategory.png")
 
 # Figure avec les 8 plots - valeur normalisée
 plt.suptitle("Word count per category (Normalized)", fontsize=16)
@@ -105,7 +107,7 @@ normalized_wordCountExposure.plot(kind='bar')
 plt.subplot(4, 2, 8)
 plt.title("PERMA", y = 0.6)
 normalized_wordCountPERMA.plot(kind='bar')
-plt.show()
+plt.savefig("./output/EDA/wordCountCategoryNormalized.png")
 
 # Transform wordCount Series to Dataframe (easier to merge)
 # And creat list of top20 words for each category
@@ -192,7 +194,7 @@ sns.set_theme(style="whitegrid")
 p = sns.violinplot(x=sentenceLength, inner="quartile",  scale="count")
 p.set(xlabel='Nb of Char', title="Sentences Length")
 sns.despine(left=True)
-plt.show()
+plt.savefig("./output/EDA/sentenceLength.png")
 
 # Longueur des phrases par catégorie (see if it's an even distribution)
 # créer un tableau contenant les phrases 
@@ -234,30 +236,30 @@ nbCharDict = {'CP': sentencesLengthCP, 'Constructivism': sentencesLengthConstruc
 sentencesLengthPerCat = pd.DataFrame(dict([ (k,pd.Series(v)) for k,v in nbCharDict.items() ]))
 fig = sns.violinplot(data=sentencesLengthPerCat, inner='quartile')
 fig.set(ylabel='Nb of char', title='Sentence length')
-plt.show()
+plt.savefig("./output/EDA/sentenceLengthCategory.png")
 
 
 # Relation croisée entre les catégories 
-# Corrélation de la classification inter-catégorie des phrases
+# Fonction prend un dataframe binaire et 2 colonnes du datafame
+# et retourne la proportion de présence de 1-1 par rapport
+# au nombre de classification dans au moins une des deux colonnes (1-1,1-0,0-1)
+# n'inclus pas les colonnes 0-0
 def get_corr(df, col1, col2):
     CrosstabResult=pd.crosstab(index=df[col1],columns=df[col2])
     
     return CrosstabResult[1][1]/(CrosstabResult[1][0]+CrosstabResult[0][1]+CrosstabResult[1][1])
 
-get_corr(data, 'Empowerment', 'PERMA')
-
 classes = ('CP', 'Constructivism', 'Coping', 'ED', 'ER/SR', 'Empowerment', 'Exposure/Habit', 'PERMA')
 
-corr_matrix = {}
+# Corrélation de la classification inter-catégorie des phrases
+corr_matrix = []
 for col1 in classes:
+    line_corr = []
     for col2 in classes:
-        if col1 == col2 or f'{col2}-{col1}' in corr_matrix:
-            continue
-        corr_matrix[f'{col1}-{col2}'] = get_corr(data, col1, col2)
-print(len(corr_matrix))
+        line_corr.append(get_corr(data, col1, col2))
+    corr_matrix.append(line_corr)
 
-#corr_matrix = 
-# Generate a mask for the upper triangle (bc of symmetry)
-#mask = np.triu(np.ones_like(corr_matrix, dtype=bool))
-#sns.heatmap(corr_matrix, annot=True, mask=mask)
-#plt.show()
+# Generate a mask for the upper triangle (same values as lower triangle)
+mask = np.triu(np.ones_like(corr_matrix, dtype=bool))
+sns.heatmap(corr_matrix, annot=True, mask=mask, xticklabels=classes, yticklabels=classes)
+plt.savefig("./output/EDA/correlationMatrix.png")
