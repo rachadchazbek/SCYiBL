@@ -1,12 +1,10 @@
 import pandas as pd
 import numpy as np
-from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
 import matplotlib.pyplot as plt
 import itertools
 import csv
 import seaborn as sns
-from scipy.stats import chi2_contingency, chi2
 
 data = pd.read_excel('./output/output_cleaning.xlsx')    
 
@@ -16,7 +14,7 @@ wordCount_df.columns = ['Word', 'Frequency']
 # Garder les 30 mots les plus utilisés
 wordCount_df = wordCount_df.nlargest(30, 'Frequency')
 wordCount_df.plot(kind='bar', x='Word', title="Total word count")
-plt.savefig("./output/EDA/totalWordCount.png")
+plt.show()
 
 # Créer texte pour chaque catégorie
 def textPerCategory(df, col):
@@ -53,61 +51,65 @@ for key, value in textDict.items():
 # histograms
 # Figure avec les 8 plots - valeur absolue
 plt.suptitle("Word count per category", fontsize=16)
-plt.subplot(4, 2, 1)
-plt.subplots_adjust(hspace=1)
-plt.title("CP", y = 0.6)
+plt.subplot(2, 2, 1)
+plt.title("CP")
 wordCountCP.plot(kind='bar')
-plt.subplot(4, 2, 2)
-plt.title("Constructivism", y = 0.6)
+plt.subplot(2, 2, 2)
+plt.title("Constructivism")
 wordCountConstructivism.plot(kind='bar')
-plt.subplot(4, 2, 3)
-plt.title("Coping", y = 0.6)
+plt.subplot(2, 2, 3)
+plt.title("Coping")
 wordCountCoping.plot(kind='bar')
-plt.subplot(4, 2, 4)
-plt.title("ED", y = 0.6)
+plt.subplot(2, 2, 4)
+plt.title("ED")
 wordCountED.plot(kind='bar')
-plt.subplot(4, 2, 5)
-plt.title("ER/SR", y = 0.6)
+plt.show()
+
+plt.suptitle("Word count per category", fontsize=16)
+plt.subplot(2, 2, 1)
+plt.title("ER/SR")
 wordCountER.plot(kind='bar')
-plt.subplot(4, 2, 6)
-plt.title("Empowerment", y = 0.6)
+plt.subplot(2, 2, 2)
+plt.title("Empowerment")
 wordCountEmpowerment.plot(kind='bar')
-plt.subplot(4, 2, 7)
-plt.title("Exposure", y = 0.6)
+plt.subplot(2, 2, 3)
+plt.title("Exposure")
 wordCountExposure.plot(kind='bar')
-plt.subplot(4, 2, 8)
-plt.title("PERMA", y = 0.6)
+plt.subplot(2, 2, 4)
+plt.title("PERMA")
 wordCountPERMA.plot(kind='bar')
-plt.savefig("./output/EDA/wordCountCategory.png")
+plt.show()
 
 # Figure avec les 8 plots - valeur normalisée
 plt.suptitle("Word count per category (Normalized)", fontsize=16)
-plt.subplot(4, 2, 1)
-plt.subplots_adjust(hspace=1)
-plt.title("CP", y = 0.6)
+plt.subplot(2, 2, 1)
+plt.title("CP")
 normalized_wordCountCP.plot(kind='bar')
-plt.subplot(4, 2, 2)
-plt.title("Constructivism", y = 0.6)
+plt.subplot(2, 2, 2)
+plt.title("Constructivism")
 normalized_wordCountConstructivism.plot(kind='bar')
-plt.subplot(4, 2, 3)
-plt.title("Coping", y = 0.6)
+plt.subplot(2, 2, 3)
+plt.title("Coping")
 normalized_wordCountCoping.plot(kind='bar')
-plt.subplot(4, 2, 4)
-plt.title("ED", y = 0.6)
+plt.subplot(2, 2, 4)
+plt.title("ED")
 normalized_wordCountED.plot(kind='bar')
-plt.subplot(4, 2, 5)
-plt.title("ER/SR", y = 0.6)
+plt.show()
+
+plt.suptitle("Word count per category (Normalized)", fontsize=16)
+plt.subplot(2, 2, 1)
+plt.title("ER/SR")
 normalized_wordCountER.plot(kind='bar')
-plt.subplot(4, 2, 6)
-plt.title("Empowerment", y = 0.6)
+plt.subplot(2, 2, 2)
+plt.title("Empowerment")
 normalized_wordCountEmpowerment.plot(kind='bar')
-plt.subplot(4, 2, 7)
-plt.title("Exposure", y = 0.6)
+plt.subplot(2, 2, 3)
+plt.title("Exposure")
 normalized_wordCountExposure.plot(kind='bar')
-plt.subplot(4, 2, 8)
-plt.title("PERMA", y = 0.6)
+plt.subplot(2, 2, 4)
+plt.title("PERMA")
 normalized_wordCountPERMA.plot(kind='bar')
-plt.savefig("./output/EDA/wordCountCategoryNormalized.png")
+plt.show()
 
 # Transform wordCount Series to Dataframe (easier to merge)
 # And creat list of top20 words for each category
@@ -194,7 +196,7 @@ sns.set_theme(style="whitegrid")
 p = sns.violinplot(x=sentenceLength, inner="quartile",  scale="count")
 p.set(xlabel='Nb of Char', title="Sentences Length")
 sns.despine(left=True)
-plt.savefig("./output/EDA/sentenceLength.png")
+plt.show()
 
 # Longueur des phrases par catégorie (see if it's an even distribution)
 # créer un tableau contenant les phrases 
@@ -236,7 +238,7 @@ nbCharDict = {'CP': sentencesLengthCP, 'Constructivism': sentencesLengthConstruc
 sentencesLengthPerCat = pd.DataFrame(dict([ (k,pd.Series(v)) for k,v in nbCharDict.items() ]))
 fig = sns.violinplot(data=sentencesLengthPerCat, inner='quartile')
 fig.set(ylabel='Nb of char', title='Sentence length')
-plt.savefig("./output/EDA/sentenceLengthCategory.png")
+plt.show()
 
 
 # Relation croisée entre les catégories 
@@ -262,4 +264,4 @@ for col1 in classes:
 # Generate a mask for the upper triangle (same values as lower triangle)
 mask = np.triu(np.ones_like(corr_matrix, dtype=bool))
 sns.heatmap(corr_matrix, annot=True, mask=mask, xticklabels=classes, yticklabels=classes)
-plt.savefig("./output/EDA/correlationMatrix.png")
+plt.show()
