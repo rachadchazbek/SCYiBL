@@ -2,19 +2,10 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
-
-# import feature extraction methods from sklearn
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.model_selection import train_test_split
-
-# import classifiers from sklearn
 from sklearn.naive_bayes import MultinomialNB, ComplementNB
-
-# import different metrics to evaluate the classifiers
-from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score
-
-# from sklearn.model_selection import train_test_split
-from sklearn.metrics import confusion_matrix 
+from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score, confusion_matrix
 
 data = pd.read_excel('./output/output_cleaning.xlsx')  
 
@@ -39,7 +30,7 @@ for col in classes:
     X_test_dtm = vect.transform(X_test)
 
     # Step 3: Train the classifier and predict for test data
-    nb = ComplementNB() # instantiate a Multinomial Naive Bayes model
+    nb = MultinomialNB() # instantiate a Multinomial Naive Bayes model
     nb.fit(X_train_dtm, y_train) # train the model
     y_pred = nb.predict(X_test_dtm) # make class predictions for X_test_dtm
 
@@ -62,7 +53,7 @@ for col in classes:
     labels = [f"{v1}\n{v2}\n{v3}" for v1, v2, v3 in zip(group_names,group_counts,group_percentages)]
     labels = np.asarray(labels).reshape(2,2)
     sns.heatmap(cf_matrix, annot=labels, fmt='')
-    plt.title(f"{col}-Complement NB")
+    plt.title(f"{col}-Multinomial NB")
     plt.xlabel('Predicted Label' + stats_text)
     plt.ylabel('True Label') 
     plt.subplots_adjust(bottom=0.3)
