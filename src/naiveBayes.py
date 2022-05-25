@@ -23,14 +23,14 @@ for col in classes:
     X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=1, test_size=0.25)
 
     # Step 2: Preprocess and Vectorize train and test data
-    vect = CountVectorizer() # instantiate a vectorizer -> Convert a collection of text documents to a matrix of token counts
+    vect = CountVectorizer(ngram_range=(1,2)) # instantiate a vectorizer -> Convert a collection of text documents to a matrix of token counts
     # DTM = document term matrix = frequency of term in sentences
     X_train_dtm = vect.fit_transform(X_train) # use it to extract features from training data
     # transform testing data (using training data's features)
     X_test_dtm = vect.transform(X_test)
 
     # Step 3: Train the classifier and predict for test data
-    nb = MultinomialNB() # instantiate a Multinomial Naive Bayes model
+    nb = ComplementNB() # instantiate a Multinomial Naive Bayes model
     nb.fit(X_train_dtm, y_train) # train the model
     y_pred = nb.predict(X_test_dtm) # make class predictions for X_test_dtm
 
@@ -53,7 +53,7 @@ for col in classes:
     labels = [f"{v1}\n{v2}\n{v3}" for v1, v2, v3 in zip(group_names,group_counts,group_percentages)]
     labels = np.asarray(labels).reshape(2,2)
     sns.heatmap(cf_matrix, annot=labels, fmt='')
-    plt.title(f"{col}-Multinomial NB")
+    plt.title(f"{col}-Complement NB, unigram and bigram")
     plt.xlabel('Predicted Label' + stats_text)
     plt.ylabel('True Label') 
     plt.subplots_adjust(bottom=0.3)
