@@ -30,7 +30,7 @@ for col in classes:
     X_test_dtm = vect.transform(X_test)
 
     # Step 3: Train the classifier and predict for test data
-    classifier = LinearSVC(class_weight="balanced") # instantiate a logistic regression model
+    classifier = LinearSVC(class_weight="balanced") # instantiate a SVM model
     classifier.fit(X_train_dtm, y_train) # fit the model with training data
     y_pred = classifier.predict(X_test_dtm) # Make predictions on test data
 
@@ -53,7 +53,7 @@ for col in classes:
     labels = [f"{v1}\n{v2}\n{v3}" for v1, v2, v3 in zip(group_names,group_counts,group_percentages)]
     labels = np.asarray(labels).reshape(2,2)
     sns.heatmap(cf_matrix, annot=labels, fmt='')
-    plt.title(f"{col}-Logistic Regression, TFIDF, 3Grams")
+    plt.title(f"{col}-LinearSVC")
     plt.xlabel('Predicted Label' + stats_text)
     plt.ylabel('True Label') 
     plt.subplots_adjust(bottom=0.3)
