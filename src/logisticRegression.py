@@ -13,7 +13,7 @@ with open("./params.yaml") as conf_file:
     config = yaml.safe_load(conf_file)
 print(config)
 
-data = pd.read_excel('./output/output_cleaning.xlsx')  
+data = pd.read_excel(config['data']['dataset'])  
 
 # Text preprocessing has already been done (see cleaning.py)
 # Predicting sentences classification one category at a time
@@ -26,20 +26,20 @@ for col in classes:
     y = data[col] # this is the column we are learning to predict. 
 
     # split X and y into training and testing sets
-    X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=1, test_size=config['logReg']['test_size'])
+    X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=config['train']['random_state'], test_size=config['train']['test_size'])
 
     # Step 2: Preprocess and Vectorize train and test data
-    vect = TfidfVectorizer(ngram_range=(3,3)) # instantiate a vectorizer -> Convert a collection of text documents to a matrix of token counts
+    ngram = config['train']['ngram']
+    vect = TfidfVectorizer(ngram_range=(1, ngram)) # instantiate a vectorizer -> Convert a collection of text documents to a matrix of token counts
     # DTM = document term matrix = frequency of term in sentences
     X_train_dtm = vect.fit_transform(X_train) # use it to extract features from training data
     # transform testing data (using training data's features)
     X_test_dtm = vect.transform(X_test)
 
     # Step 3: Train the classifier and predict for test data
-    logreg = LogisticRegression(class_weight="balanced") # instantiate a logistic regression model
-    logreg.fit(X_train_dtm, y_train) # fit the model with training data
-    y_pred = logreg.predict(X_test_dtm) # Make predictions on test data
-
+    model = LogisticRegression(class_weight='balanced') # instantiate a logistic regression model
+    model.fit(X_train_dtm, y_train) # fit the model with training data
+    y_pred = model.predict(X_test_dtm) # Make predictions on test data
 
     # Step 4: Evaluate the classifier using various measures
     # Confusion Matrix
