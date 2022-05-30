@@ -3,17 +3,29 @@ import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
 from sklearn.linear_model import LogisticRegression
+from sklearn.naive_bayes import MultinomialNB
+from sklearn.svm import LinearSVC
 from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score, confusion_matrix
 
+def modelChoice(num):
+    if num == 1:
+        model = LogisticRegression()
+    elif num == 2:
+        model = MultinomialNB()
+    elif num == 3:
+        model = LinearSVC()
+
+    return model 
+
 import yaml
 
 with open("./params.yaml") as conf_file:
-    config = yaml.safe_load(conf_file)
-print(config)
+    params = yaml.safe_load(conf_file)
+print(params)
 
-data = pd.read_excel(config['data']['dataset'])  
+data = pd.read_excel(params['data']['dataset'])  
 
 # Text preprocessing has already been done (see cleaning.py)
 # Predicting sentences classification one category at a time
@@ -26,10 +38,10 @@ for col in classes:
     y = data[col] # this is the column we are learning to predict. 
 
     # split X and y into training and testing sets
-    X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=config['train']['random_state'], test_size=config['train']['test_size'])
+    X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=params['train']['random_state'], test_size=params['train']['test_size'])
 
     # Step 2: Preprocess and Vectorize train and test data
-    ngram = config['train']['ngram']
+    ngram = params['train']['ngram']
     vect = TfidfVectorizer(ngram_range=(1, ngram)) # instantiate a vectorizer -> Convert a collection of text documents to a matrix of token counts
     # DTM = document term matrix = frequency of term in sentences
     X_train_dtm = vect.fit_transform(X_train) # use it to extract features from training data
@@ -37,7 +49,7 @@ for col in classes:
     X_test_dtm = vect.transform(X_test)
 
     # Step 3: Train the classifier and predict for test data
-    model = LogisticRegression(class_weight='balanced') # instantiate a logistic regression model
+    model = modelChoice(params['train']['model'])
     model.fit(X_train_dtm, y_train) # fit the model with training data
     y_pred = model.predict(X_test_dtm) # Make predictions on test data
 
