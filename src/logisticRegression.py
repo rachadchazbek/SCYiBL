@@ -10,6 +10,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score, confusion_matrix
 
 def modelChoice(num):
+    # can add class_weight='balanced' for LinearSVC and LogistricRegression
     if num == 1:
         model = LogisticRegression()
     elif num == 2:

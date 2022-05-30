@@ -1,38 +1,38 @@
-import pandas as pd
-import matplotlib.pyplot as plt
-import numpy as np
-import seaborn as sns
-from sklearn.svm import LinearSVC
-from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score, confusion_matrix
+#import pandas as pd
+#import matplotlib.pyplot as plt
+#import numpy as np
+#import seaborn as sns
+#from sklearn.svm import LinearSVC
+#from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
+#from sklearn.model_selection import train_test_split
+#from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score, confusion_matrix
 
-data = pd.read_excel('./output/output_cleaning.xlsx')  
+#ata = pd.read_excel('./output/output_cleaning.xlsx')  
 
 # Text preprocessing has already been done (see cleaning.py)
 # Predicting sentences classification one category at a time
-classes = ['CP', 'Constructivism', 'Coping', 'ED', 'ER/SR', 'Empowerment', 'Exposure/Habit', 'PERMA']
+#classes = ['CP', 'Constructivism', 'Coping', 'ED', 'ER/SR', 'Empowerment', 'Exposure/Habit', 'PERMA']
 
-for col in classes:
+#for col in classes:
 
     # Step 1: train-test split
-    X = data.Sentence # the column text contains textual data to extract features from
-    y = data[col] # this is the column we are learning to predict. 
+    #X = data.Sentence # the column text contains textual data to extract features from
+    #y = data[col] # this is the column we are learning to predict. 
 
     # split X and y into training and testing sets
-    X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=1, test_size=0.25)
+    #X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=1, test_size=0.25)
 
     # Step 2: Preprocess and Vectorize train and test data
-    vect = CountVectorizer() # instantiate a vectorizer -> Convert a collection of text documents to a matrix of token counts
+    #vect = CountVectorizer() # instantiate a vectorizer -> Convert a collection of text documents to a matrix of token counts
     # DTM = document term matrix = frequency of term in sentences
-    X_train_dtm = vect.fit_transform(X_train) # use it to extract features from training data
+    #X_train_dtm = vect.fit_transform(X_train) # use it to extract features from training data
     # transform testing data (using training data's features)
-    X_test_dtm = vect.transform(X_test)
+    #X_test_dtm = vect.transform(X_test)
 
     # Step 3: Train the classifier and predict for test data
-    classifier = LinearSVC(class_weight="balanced") # instantiate a SVM model
-    classifier.fit(X_train_dtm, y_train) # fit the model with training data
-    y_pred = classifier.predict(X_test_dtm) # Make predictions on test data
+    #classifier = LinearSVC(class_weight="balanced") # instantiate a SVM model
+    #classifier.fit(X_train_dtm, y_train) # fit the model with training data
+    #y_pred = classifier.predict(X_test_dtm) # Make predictions on test data
 
 
     # Step 4: Evaluate the classifier using various measures

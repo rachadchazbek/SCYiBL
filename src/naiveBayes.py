@@ -24,11 +24,11 @@
 #X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=1, test_size=0.25)
 
 # Step 2: Preprocess and Vectorize train and test data
-vect = TfidfVectorizer() # instantiate a vectorizer -> Convert a collection of text documents to a matrix of token counts
+#vect = TfidfVectorizer() # instantiate a vectorizer -> Convert a collection of text documents to a matrix of token counts
 # DTM = document term matrix = frequency of term in sentences
-X_train_dtm = vect.fit_transform(X_train) # use it to extract features from training data and produce DTM
+#X_train_dtm = vect.fit_transform(X_train) # use it to extract features from training data and produce DTM
 # transform testing data (using training data's features)
-X_test_dtm = vect.transform(X_test)
+#X_test_dtm = vect.transform(X_test)
 
 '''
 # Step 3: Train the classifier and predict for test data
