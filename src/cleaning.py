@@ -41,7 +41,7 @@ def getStopWords():
 words = getStopWords()
 cleaning_stopWords = lambda x: ' '.join([word for word in x.split() if word not in (words)])
 
-# // Main 
+# Main 
 with dvc.open(
         'data/data.xlsx',
         mode='rb'

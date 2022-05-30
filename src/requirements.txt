@@ -1,1 +1,11 @@
 dvc
+pandas
+numpy
+string
+nltk.corpus
+re
+matplotlib.pyplot
+seaborn
+itertools
+sklearn
+yaml

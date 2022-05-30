@@ -7,6 +7,12 @@ from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score, confusion_matrix
 
+import yaml
+
+with open("./params.yaml") as conf_file:
+    config = yaml.safe_load(conf_file)
+print(config)
+
 data = pd.read_excel('./output/output_cleaning.xlsx')  
 
 # Text preprocessing has already been done (see cleaning.py)
@@ -20,7 +26,7 @@ for col in classes:
     y = data[col] # this is the column we are learning to predict. 
 
     # split X and y into training and testing sets
-    X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=1, test_size=0.25)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=1, test_size=config['logReg']['test_size'])
 
     # Step 2: Preprocess and Vectorize train and test data
     vect = TfidfVectorizer(ngram_range=(3,3)) # instantiate a vectorizer -> Convert a collection of text documents to a matrix of token counts
