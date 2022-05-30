@@ -19,6 +19,15 @@ def modelChoice(num):
 
     return model 
 
+def vectChoice(num, ngram):
+    if num == 1:
+        vect = CountVectorizer(ngram_range=(1, ngram))
+    elif num == 2:
+         vect = TfidfVectorizer(ngram_range=(1, ngram))
+
+    return vect 
+
+
 import yaml
 
 with open("./params.yaml") as conf_file:
@@ -41,8 +50,8 @@ for col in classes:
     X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=params['train']['random_state'], test_size=params['train']['test_size'])
 
     # Step 2: Preprocess and Vectorize train and test data
-    ngram = params['train']['ngram']
-    vect = TfidfVectorizer(ngram_range=(1, ngram)) # instantiate a vectorizer -> Convert a collection of text documents to a matrix of token counts
+    # instantiate a vectorizer -> Convert a collection of text documents to a matrix of token counts
+    vect = vectChoice(params['train']['vector'], params['train']['ngram'])
     # DTM = document term matrix = frequency of term in sentences
     X_train_dtm = vect.fit_transform(X_train) # use it to extract features from training data
     # transform testing data (using training data's features)

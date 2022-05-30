@@ -1,27 +1,27 @@
-import pandas as pd
-import matplotlib.pyplot as plt
-import numpy as np
-import seaborn as sns
-from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
-from sklearn.model_selection import train_test_split
-from sklearn.naive_bayes import MultinomialNB, ComplementNB
-from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score, confusion_matrix
+#import pandas as pd
+#import matplotlib.pyplot as plt
+#import numpy as np
+#import seaborn as sns
+#from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
+#from sklearn.model_selection import train_test_split
+#from sklearn.naive_bayes import MultinomialNB, ComplementNB
+#from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score, confusion_matrix
 
-data = pd.read_excel('./output/output_cleaning.xlsx')  
+#data = pd.read_excel('./output/output_cleaning.xlsx')  
 
 # Text preprocessing has already been done (see cleaning.py)
 # Predicting sentences classification one category at a time
-classes = ['CP', 'Constructivism', 'Coping', 'ED', 'ER/SR', 'Empowerment', 'Exposure/Habit', 'PERMA']
+#classes = ['CP', 'Constructivism', 'Coping', 'ED', 'ER/SR', 'Empowerment', 'Exposure/Habit', 'PERMA']
 
 #for col in classes:
 
 # Step 1: train-test split
-X = data.Sentence # the column text contains textual data to extract features from
-y = data.CP # this is the column we are learning to predict. 
+#X = data.Sentence # the column text contains textual data to extract features from
+#y = data.CP # this is the column we are learning to predict. 
 
 
 # split X and y into training and testing sets
-X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=1, test_size=0.25)
+#X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=1, test_size=0.25)
 
 # Step 2: Preprocess and Vectorize train and test data
 vect = TfidfVectorizer() # instantiate a vectorizer -> Convert a collection of text documents to a matrix of token counts
