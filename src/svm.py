@@ -34,7 +34,7 @@
     #classifier.fit(X_train_dtm, y_train) # fit the model with training data
     #y_pred = classifier.predict(X_test_dtm) # Make predictions on test data
 
-
+'''
     # Step 4: Evaluate the classifier using various measures
     # Confusion Matrix
     cf_matrix = confusion_matrix(y_test, y_pred)
@@ -58,3 +58,4 @@
     plt.ylabel('True Label') 
     plt.subplots_adjust(bottom=0.3)
     plt.show()
+    '''
