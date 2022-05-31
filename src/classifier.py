@@ -8,7 +8,9 @@ from sklearn.svm import LinearSVC
 from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score, confusion_matrix
+import yaml
 
+## Functions ##
 def modelChoice(num):
     # can add class_weight='balanced' for LinearSVC and LogistricRegression
     if num == 1:
@@ -28,9 +30,7 @@ def vectChoice(num, ngram):
 
     return vect 
 
-
-import yaml
-
+## MAIN ## 
 with open("./params.yaml") as conf_file:
     params = yaml.safe_load(conf_file)
 print(params)
@@ -81,7 +81,21 @@ for col in classes:
     labels = [f"{v1}\n{v2}\n{v3}" for v1, v2, v3 in zip(group_names,group_counts,group_percentages)]
     labels = np.asarray(labels).reshape(2,2)
     sns.heatmap(cf_matrix, annot=labels, fmt='')
-    plt.title(f"{col}-Logistic Regression, TFIDF, 3Grams")
+    if params['train']['model'] == 1:
+        if params['train']['vector'] == 1:
+            plt.title(f"{col}, Logistic Regression, CountVectorizer, {params['train']['ngram']}-gram")
+        elif params['train']['vector'] == 2:
+            plt.title(f"{col}, Logistic Regression, TFIDF vectorizer, {params['train']['ngram']}-gram")
+    elif params['train']['model'] == 2:
+        if params['train']['vector'] == 1:
+            plt.title(f"{col}, Multinomial NB, CountVectorizer, {params['train']['ngram']}-gram")
+        elif params['train']['vector'] == 2:
+            plt.title(f"{col}, Multinomial NB, TFIDF vectorizer, {params['train']['ngram']}-gram")
+    elif params['train']['model'] == 3:
+        if params['train']['vector'] == 1:
+            plt.title(f"{col}, Linear SVC, CountVectorizer, {params['train']['ngram']}-gram")
+        elif params['train']['vector'] == 2:
+            plt.title(f"{col}, Linear SVC, TFIDF vectorizer, {params['train']['ngram']}-gram")
     plt.xlabel('Predicted Label' + stats_text)
     plt.ylabel('True Label') 
     plt.subplots_adjust(bottom=0.3)
