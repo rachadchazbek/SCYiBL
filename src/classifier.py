@@ -99,4 +99,4 @@ for col in classes:
     plt.xlabel('Predicted Label' + stats_text)
     plt.ylabel('True Label') 
     plt.subplots_adjust(bottom=0.3)
-    plt.show()
+    plt.savefig(params['evaluate']['file_path'], format='png')
