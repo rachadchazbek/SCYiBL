@@ -41,38 +41,37 @@ data = pd.read_excel(params['data']['dataset'])
 # Predicting sentences classification one category at a time
 classes = ['CP', 'Constructivism', 'Coping', 'ED', 'ER/SR', 'Empowerment', 'Exposure/Habit', 'PERMA']
 
-for col in classes:
+# Step 1: train-test split
+X = data.Sentence # the column text contains textual data to extract features from
+y = data.CP # this is the column we are learning to predict. 
 
-    # Step 1: train-test split
-    X = data.Sentence # the column text contains textual data to extract features from
-    y = data[col] # this is the column we are learning to predict. 
+# split X and y into training and testing sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=params['train']['random_state'], test_size=params['train']['test_size'])
 
-    # split X and y into training and testing sets
-    X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=params['train']['random_state'], test_size=params['train']['test_size'])
+# Step 2: Preprocess and Vectorize train and test data
+# instantiate a vectorizer -> Convert a collection of text documents to a matrix of token counts
+vect = vectChoice(params['train']['vector'], params['train']['ngram'])
+# DTM = document term matrix = frequency of term in sentences
+X_train_dtm = vect.fit_transform(X_train) # use it to extract features from training data
+# transform testing data (using training data's features)
+X_test_dtm = vect.transform(X_test)
 
-    # Step 2: Preprocess and Vectorize train and test data
-    # instantiate a vectorizer -> Convert a collection of text documents to a matrix of token counts
-    vect = vectChoice(params['train']['vector'], params['train']['ngram'])
-    # DTM = document term matrix = frequency of term in sentences
-    X_train_dtm = vect.fit_transform(X_train) # use it to extract features from training data
-    # transform testing data (using training data's features)
-    X_test_dtm = vect.transform(X_test)
+# Step 3: Train the classifier and predict for test data
+model = modelChoice(params['train']['model'])
+model.fit(X_train_dtm, y_train) # fit the model with training data
+y_pred = model.predict(X_test_dtm) # Make predictions on test data
 
-    # Step 3: Train the classifier and predict for test data
-    model = modelChoice(params['train']['model'])
-    model.fit(X_train_dtm, y_train) # fit the model with training data
-    y_pred = model.predict(X_test_dtm) # Make predictions on test data
-
-    # Step 4: Evaluate the classifier using various measures
-    # Confusion Matrix
-    cf_matrix = confusion_matrix(y_test, y_pred)
-    # Accuracy = what proportion of observation our system labeled correctly (TP+TN/TP+FP+TN+FN)
-    accuracy = accuracy_score(y_test, y_pred)
-    # Precision = what proportion of the items our system labeled positive is actually positive (TP/TP+FP)
-    precision = precision_score(y_test, y_pred)
-    # Recall = percentage of items actually present in input that were correctly labeled (TP/TP+FN)
-    recall = recall_score(y_test, y_pred)
-    f1_score = 2*precision*recall / (precision + recall)
+# Step 4: Evaluate the classifier using various measures
+'''
+# Confusion Matrix
+cf_matrix = confusion_matrix(y_test, y_pred)
+# Accuracy = what proportion of observation our system labeled correctly (TP+TN/TP+FP+TN+FN)
+accuracy = accuracy_score(y_test, y_pred)
+# Precision = what proportion of the items our system labeled positive is actually positive (TP/TP+FP)
+precision = precision_score(y_test, y_pred)
+# Recall = percentage of items actually present in input that were correctly labeled (TP/TP+FN)
+recall = recall_score(y_test, y_pred)
+f1_score = 2*precision*recall / (precision + recall)
     stats_text = "\n\nAccuracy={:0.2f}\nPrecision={:0.2f}\nRecall={:0.2f}\nF1 Score={:0.2f}".format(
                     accuracy,precision,recall,f1_score)
     group_names = ['TN','FP','FN','TP']
@@ -100,3 +99,4 @@ for col in classes:
     plt.ylabel('True Label') 
     plt.subplots_adjust(bottom=0.3)
     plt.savefig(params['evaluate']['file_path'], format='png')
+'''
