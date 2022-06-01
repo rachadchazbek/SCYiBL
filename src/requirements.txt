@@ -1,7 +1,11 @@
 dvc
 pandas
 numpy
-nltk
-matplotlib
+string
+nltk.corpus
+re
+matplotlib.pyplot
 seaborn
+itertools
 sklearn
+yaml
