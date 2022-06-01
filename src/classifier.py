@@ -1,3 +1,4 @@
+import json
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
@@ -79,9 +80,12 @@ recall = recall_score(y_test, y_pred)
 f1_score = 2*precision*recall / (precision + recall)
 
 fpr, tpr, threshold = roc_curve(y_test, y_pred)
-auc = auc(fpr, tpr)
+auc = { "auc": auc(fpr, tpr)}
 
-print(auc)
+metrics_json = json.dumps(auc, indent = 4)
+with open("output/metrics.json", "w") as outfile:
+    outfile.write(metrics_json)
+
     # stats_text = "\n\nAccuracy={:0.2f}\nPrecision={:0.2f}\nRecall={:0.2f}\nF1 Score={:0.2f}".format(
     #                    accuracy,precision,recall,f1_score)
     #group_names = ['TN','FP','FN','TP']
