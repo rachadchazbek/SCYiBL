@@ -71,14 +71,14 @@ cmdf.to_csv('./output/confusion_matrix.csv', index=False)
 
 #cf_matrix = confusion_matrix(y_test, y_pred)
     # Accuracy = what proportion of observation our system labeled correctly (TP+TN/TP+FP+TN+FN)
- #   accuracy = accuracy_score(y_test, y_pred)
+accuracy = accuracy_score(y_test, y_pred)
     # Precision = what proportion of the items our system labeled positive is actually positive (TP/TP+FP)
-  #  precision = precision_score(y_test, y_pred)
+precision = precision_score(y_test, y_pred)
     # Recall = percentage of items actually present in input that were correctly labeled (TP/TP+FN)
-   # recall = recall_score(y_test, y_pred)
-    #f1_score = 2*precision*recall / (precision + recall)
-    #stats_text = "\n\nAccuracy={:0.2f}\nPrecision={:0.2f}\nRecall={:0.2f}\nF1 Score={:0.2f}".format(
-     #               accuracy,precision,recall,f1_score)
+recall = recall_score(y_test, y_pred)
+f1_score = 2*precision*recall / (precision + recall)
+    # stats_text = "\n\nAccuracy={:0.2f}\nPrecision={:0.2f}\nRecall={:0.2f}\nF1 Score={:0.2f}".format(
+    #                    accuracy,precision,recall,f1_score)
     #group_names = ['TN','FP','FN','TP']
     #group_counts = ["{0:0.0f}".format(value) for value in cf_matrix.flatten()]
     #group_percentages = ["{0:.2%}".format(value) for value in cf_matrix.flatten()/np.sum(cf_matrix)]
