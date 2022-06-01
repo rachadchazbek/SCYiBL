@@ -80,9 +80,12 @@ recall = recall_score(y_test, y_pred)
 f1_score = 2*precision*recall / (precision + recall)
 
 fpr, tpr, threshold = roc_curve(y_test, y_pred)
-auc = { "auc": auc(fpr, tpr)}
+dictionnary = { 
+    "auc": auc(fpr, tpr),
+    "f1_score": f1_score
+}
 
-metrics_json = json.dumps(auc, indent = 4)
+metrics_json = json.dumps(dictionnary, indent = 4)
 with open("output/metrics.json", "w") as outfile:
     outfile.write(metrics_json)
 
