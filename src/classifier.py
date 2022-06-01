@@ -64,6 +64,10 @@ y_pred = model.predict(X_test_dtm) # Make predictions on test data
 
 # Step 4: Evaluate the classifier using various measures
 # have a csv file with y_test, y_pred
+mapping = {i: cls_name for i, cls_name in enumerate(classes)}
+cmdf = pd.DataFrame(
+    {'actual': y_test, 'predicted': y_pred})
+cmdf.to_csv('./output/confusion_matrix.csv', index=False)
 
 #cf_matrix = confusion_matrix(y_test, y_pred)
     # Accuracy = what proportion of observation our system labeled correctly (TP+TN/TP+FP+TN+FN)
