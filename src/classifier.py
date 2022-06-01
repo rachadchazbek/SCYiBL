@@ -49,6 +49,18 @@ y = data.CP # this is the column we are learning to predict.
 # split X and y into training and testing sets
 X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=params['train']['random_state'], test_size=params['train']['test_size'])
 
+# Step 2: Preprocess and Vectorize train and test data
+# instantiate a vectorizer -> Convert a collection of text documents to a matrix of token counts
+vect = vectChoice(params['train']['vector'], params['train']['ngram'])
+# DTM = document term matrix = frequency of term in sentences
+X_train_dtm = vect.fit_transform(X_train) # use it to extract features from training data
+# transform testing data (using training data's features)
+X_test_dtm = vect.transform(X_test)
+# Step 3: Train the classifier and predict for test data
+model = modelChoice(params['train']['model'])
+model.fit(X_train_dtm, y_train) # fit the model with training data
+y_pred = model.predict(X_test_dtm) # Make predictions on test data
+
 
 # Step 4: Evaluate the classifier using various measures
 # have a csv file with y_test, y_pred
