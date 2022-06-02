@@ -8,7 +8,7 @@ from sklearn.naive_bayes import MultinomialNB
 from sklearn.svm import LinearSVC
 from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score, confusion_matrix, auc, roc_curve
+from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score, confusion_matrix, roc_auc_score
 import yaml
 
 ## Functions ##
@@ -80,10 +80,9 @@ precision = precision_score(y_test, y_pred)
 recall = recall_score(y_test, y_pred)
 f1_score = 2*precision*recall / (precision + recall)
 
-fpr, tpr, threshold = roc_curve(y_test, y_pred)
 dictionnary = { 
-    "auc": auc(fpr, tpr),
-    "f1_score": f1_score
+    "auc": roc_auc_score(y_test, y_pred),
+    "f1_score": f1_score,
 }
 
 metrics_json = json.dumps(dictionnary, indent = 4)
