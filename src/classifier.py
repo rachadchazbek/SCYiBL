@@ -1,4 +1,6 @@
 import json
+import math
+import os
 import matplotlib
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -9,7 +11,7 @@ from sklearn.naive_bayes import MultinomialNB
 from sklearn.svm import LinearSVC
 from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score, confusion_matrix, roc_auc_score, roc_curve
+from sklearn.metrics import accuracy_score, f1_score, precision_recall_curve, precision_score, recall_score, confusion_matrix, roc_auc_score, roc_curve
 import yaml
 
 ## Functions ##
@@ -72,18 +74,25 @@ cmdf = pd.DataFrame(
     {'actual': y_test, 'predicted': y_pred})
 cmdf.to_csv('./output/confusion_matrix.csv', index=False)
 
-# Accuracy = what proportion of observation our system labeled correctly (TP+TN/TP+FP+TN+FN)
-accuracy = accuracy_score(y_test, y_pred)
-# Precision = what proportion of the items our system labeled positive is actually positive (TP/TP+FP)
-precision = precision_score(y_test, y_pred)
-# Recall = percentage of items actually present in input that were correctly labeled (TP/TP+FN)
-recall = recall_score(y_test, y_pred)
-f1_score = 2*precision*recall / (precision + recall)
+precision, recall, prc_thresholds = precision_recall_curve(y_test, y_pred)
+nth_point = math.ceil(len(prc_thresholds) / 1000)
+prc_points = list(zip(precision, recall, prc_thresholds))[::nth_point]
+prc_file = os.path.join("output", "precision_recall.json")
+with open(prc_file, "w") as fd:
+    json.dumps(
+        {
+            "prc": [
+                {"precision": p, "recall": r, "threshold": t}
+                for p, r, t in prc_points
+            ]
+        },
+        indent=4,
+    )
 
     ## Metrics ##
 dictionnary = { 
     "auc": roc_auc_score(y_test, y_pred),
-    "f1_score": f1_score,
+    "f1_score": f1_score(y_test, y_pred),
 }
 
 metrics_json = json.dumps(dictionnary, indent = 4)
