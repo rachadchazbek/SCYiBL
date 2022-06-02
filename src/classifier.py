@@ -1,11 +1,8 @@
 import json
 import math
 import os
-import matplotlib
 import pandas as pd
 import matplotlib.pyplot as plt
-import numpy as np
-import seaborn as sns
 from sklearn.linear_model import LogisticRegression
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.svm import LinearSVC
@@ -74,20 +71,21 @@ cmdf = pd.DataFrame(
     {'actual': y_test, 'predicted': y_pred})
 cmdf.to_csv('./output/confusion_matrix.csv', index=False)
 
+    ## Precision Recall Curve ##
 precision, recall, prc_thresholds = precision_recall_curve(y_test, y_pred)
 nth_point = math.ceil(len(prc_thresholds) / 1000)
 prc_points = list(zip(precision, recall, prc_thresholds))[::nth_point]
 prc_file = os.path.join("output", "precision_recall.json")
 with open(prc_file, "w") as fd:
-    json.dumps(
+    fd.write(json.dumps(
         {
             "prc": [
-                {"precision": p, "recall": r, "threshold": t}
+                {"precision": float(p), "recall": float(r), "threshold": int(t)}
                 for p, r, t in prc_points
             ]
         },
         indent=4,
-    )
+    ))
 
     ## Metrics ##
 dictionnary = { 
