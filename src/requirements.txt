@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 absl-py==1.0.0
 aiohttp==3.8.1
 aiohttp-retry==2.4.6
@@ -149,3 +150,15 @@ wrapt==1.14.1
 xmltodict==0.13.0
 yarl==1.7.2
 zc.lockfile==2.0
+=======
+dvc
+pandas
+numpy
+nltk
+re
+matplotlib.pyplot
+seaborn
+itertools
+sklearn
+yaml
+>>>>>>> c975d6b94d539cd3ffe5b72b114cc4f1a6ce4fee
