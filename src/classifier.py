@@ -1,4 +1,5 @@
 import json
+import matplotlib
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
@@ -8,7 +9,7 @@ from sklearn.naive_bayes import MultinomialNB
 from sklearn.svm import LinearSVC
 from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score, confusion_matrix, roc_auc_score
+from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score, confusion_matrix, roc_auc_score, roc_curve
 import yaml
 
 ## Functions ##
@@ -79,6 +80,7 @@ precision = precision_score(y_test, y_pred)
 recall = recall_score(y_test, y_pred)
 f1_score = 2*precision*recall / (precision + recall)
 
+    ## Metrics ##
 dictionnary = { 
     "auc": roc_auc_score(y_test, y_pred),
     "f1_score": f1_score,
@@ -87,6 +89,17 @@ dictionnary = {
 metrics_json = json.dumps(dictionnary, indent = 4)
 with open("output/metrics.json", "w") as outfile:
     outfile.write(metrics_json)
+
+    ## ROC Curve ##
+fpr, tpr, thresholds = roc_curve(y_test, y_pred)
+
+plt.plot(fpr, tpr)
+plt.title('ROC curve') 
+plt.xlabel('False Positive Rate')
+plt.ylabel('True Positive Rate')
+plt.savefig('output/roc_curve.png', format="png")
+
+
 
     # stats_text = "\n\nAccuracy={:0.2f}\nPrecision={:0.2f}\nRecall={:0.2f}\nF1 Score={:0.2f}".format(
     #                    accuracy,precision,recall,f1_score)
