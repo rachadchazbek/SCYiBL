@@ -44,8 +44,9 @@ classes = ['CP', 'Constructivism', 'Coping', 'ED', 'ER/SR', 'Empowerment', 'Expo
 
 
 # Step 1: train-test split
+category = params['data']['category']
 X = data.Sentence # the column text contains textual data to extract features from
-y = data.CP # this is the column we are learning to predict. 
+y = data[category] # this is the column we are learning to predict. 
 
 # split X and y into training and testing sets
 X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=params['train']['random_state'], test_size=params['train']['test_size'])
