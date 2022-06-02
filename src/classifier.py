@@ -78,14 +78,13 @@ nth_point = math.ceil(len(prc_thresholds) / 1000)
 prc_points = list(zip(precision, recall, prc_thresholds))[::nth_point]
 prc_file = os.path.join("output", "precision_recall.json")
 with open(prc_file, "w") as fd:
-    json.dump(
+    json.dumps(
         {
             "prc": [
                 {"precision": p, "recall": r, "threshold": t}
                 for p, r, t in prc_points
             ]
         },
-        fd,
         indent=4,
     )
 
