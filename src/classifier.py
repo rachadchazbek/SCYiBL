@@ -91,6 +91,7 @@ with open(prc_file, "w") as fd:
 dictionnary = { 
     "auc": roc_auc_score(y_test, y_pred),
     "f1_score": f1_score(y_test, y_pred),
+    "accuracy": accuracy_score(y_test, y_pred)
 }
 
 metrics_json = json.dumps(dictionnary, indent = 4)
