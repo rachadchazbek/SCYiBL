@@ -1,7 +1,7 @@
 dvc
 pandas
 numpy
-nltk.corpus
+nltk
 re
 matplotlib.pyplot
 seaborn
