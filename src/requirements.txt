@@ -1,7 +1,6 @@
 dvc
 pandas
 numpy
-string
 nltk.corpus
 re
 matplotlib.pyplot
