@@ -87,31 +87,3 @@ dictionnary = {
 metrics_json = json.dumps(dictionnary, indent = 4)
 with open("output/metrics.json", "w") as outfile:
     outfile.write(metrics_json)
-
-    # stats_text = "\n\nAccuracy={:0.2f}\nPrecision={:0.2f}\nRecall={:0.2f}\nF1 Score={:0.2f}".format(
-    #                    accuracy,precision,recall,f1_score)
-    #group_names = ['TN','FP','FN','TP']
-    #group_counts = ["{0:0.0f}".format(value) for value in cf_matrix.flatten()]
-    #group_percentages = ["{0:.2%}".format(value) for value in cf_matrix.flatten()/np.sum(cf_matrix)]
-    #labels = [f"{v1}\n{v2}\n{v3}" for v1, v2, v3 in zip(group_names,group_counts,group_percentages)]
-    #labels = np.asarray(labels).reshape(2,2)
-    #sns.heatmap(cf_matrix, annot=labels, fmt='')
-    #if params['train']['model'] == 1:
-    #    if params['train']['vector'] == 1:
-    #        plt.title(f"{col}, Logistic Regression, CountVectorizer, {params['train']['ngram']}-gram")
-    #    elif params['train']['vector'] == 2:
-    #        plt.title(f"{col}, Logistic Regression, TFIDF vectorizer, {params['train']['ngram']}-gram")
-    #elif params['train']['model'] == 2:
-    #    if params['train']['vector'] == 1:
-    #        plt.title(f"{col}, Multinomial NB, CountVectorizer, {params['train']['ngram']}-gram")
-    #    elif params['train']['vector'] == 2:
-    #        plt.title(f"{col}, Multinomial NB, TFIDF vectorizer, {params['train']['ngram']}-gram")
-    #elif params['train']['model'] == 3:
-    #    if params['train']['vector'] == 1:
-    #        plt.title(f"{col}, Linear SVC, CountVectorizer, {params['train']['ngram']}-gram")
-    #    elif params['train']['vector'] == 2:
-    #        plt.title(f"{col}, Linear SVC, TFIDF vectorizer, {params['train']['ngram']}-gram")
-    #plt.xlabel('Predicted Label' + stats_text)
-    #plt.ylabel('True Label') 
-    #plt.subplots_adjust(bottom=0.3)
-    #plt.savefig(params['evaluate']['file_path'], format='png')
