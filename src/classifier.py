@@ -47,7 +47,7 @@ classes = ['CP', 'Constructivism', 'Coping', 'ED', 'ER/SR', 'Empowerment', 'Expo
 # Step 1: train-test split
 category = params['data']['category']
 X = data.Sentence # the column text contains textual data to extract features from
-y = data[category] # this is the column we are learning to predict. # y = data[classes]
+y = data[classes] # this is the column we are learning to predict.
 
 # split X and y into training and testing sets
 X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=params['train']['random_state'], test_size=params['train']['test_size'])
@@ -60,7 +60,7 @@ X_train_dtm = vect.fit_transform(X_train) #.toarray() ? # use it to extract feat
 # transform testing data (using training data's features)
 X_test_dtm = vect.transform(X_test)
 # Step 3: Train the classifier and predict for test data
-model = modelChoice(params['train']['model'])
+model = BinaryRelevance(modelChoice(params['train']['model']))
 model.fit(X_train_dtm, y_train) # fit the model with training data
 y_pred = model.predict(X_test_dtm) # Make predictions on test data
 
