@@ -111,6 +111,7 @@ ruamel.yaml==0.17.21
 ruamel.yaml.clib==0.2.6
 scikeras==0.8.0
 scikit-learn==1.0.2
+scikit-multilearn==0.2.0
 scipy==1.8.0
 scmrepo==0.0.19
 seaborn==0.11.2

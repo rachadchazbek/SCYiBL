@@ -8,6 +8,7 @@ from sklearn.naive_bayes import MultinomialNB
 from sklearn.svm import LinearSVC
 from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
 from sklearn.model_selection import train_test_split
+from skmultilearn.problem_transform import BinaryRelevance
 from sklearn.metrics import accuracy_score, f1_score, precision_recall_curve, precision_score, recall_score, confusion_matrix, roc_auc_score, roc_curve
 import yaml
 
@@ -46,7 +47,7 @@ classes = ['CP', 'Constructivism', 'Coping', 'ED', 'ER/SR', 'Empowerment', 'Expo
 # Step 1: train-test split
 category = params['data']['category']
 X = data.Sentence # the column text contains textual data to extract features from
-y = data[category] # this is the column we are learning to predict. 
+y = data[category] # this is the column we are learning to predict. # y = data[classes]
 
 # split X and y into training and testing sets
 X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=params['train']['random_state'], test_size=params['train']['test_size'])
@@ -55,7 +56,7 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=params['t
 # instantiate a vectorizer -> Convert a collection of text documents to a matrix of token counts
 vect = vectChoice(params['train']['vector'], params['train']['ngram'])
 # DTM = document term matrix = frequency of term in sentences
-X_train_dtm = vect.fit_transform(X_train) # use it to extract features from training data
+X_train_dtm = vect.fit_transform(X_train) #.toarray() ? # use it to extract features from training data
 # transform testing data (using training data's features)
 X_test_dtm = vect.transform(X_test)
 # Step 3: Train the classifier and predict for test data
