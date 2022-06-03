@@ -14,7 +14,7 @@ import yaml
 
 ## Functions ##
 def modelChoice(num):
-    # can add class_weight='balanced' for LinearSVC and LogistricRegression
+    # can add class_weight='balanced' for LinearSVC and LogisticRegression
     if num == 1:
         model = LogisticRegression()
     elif num == 2:
