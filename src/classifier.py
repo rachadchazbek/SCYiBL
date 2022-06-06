@@ -97,6 +97,9 @@ plt.savefig('output/pr_curve.png', format="png")
 with open("output/metrics.json", "w") as outfile:
     outfile.write('{}')
 
+
+## Metrics ##
+
 ## ROC Curve ##
 fpr = dict()
 tpr = dict()
@@ -107,3 +110,9 @@ plt.title('ROC curve')
 plt.xlabel('False Positive Rate')
 plt.ylabel('True Positive Rate')
 plt.savefig('output/roc_curve.png', format="png")
+
+
+# csv classification report
+# split curves into 2 figures
+# auc and accuracy
+# confusion matrix w/ 8 figures
