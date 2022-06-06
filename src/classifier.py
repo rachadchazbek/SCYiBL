@@ -86,7 +86,7 @@ plt.legend(loc="lower left")
 plt.title("precision vs. recall curve")
 plt.savefig('output/pr_curve.png', format="png")
 
-## Metrics ##
+'''
 dictionnary = { 
     "auc": roc_auc_score(y_test, y_predict),
     "f1_score": f1_score(y_test, y_predict),
@@ -96,6 +96,9 @@ dictionnary = {
 metrics_json = json.dumps(dictionnary, indent = 4)
 with open("output/metrics.json", "w") as outfile:
     outfile.write(metrics_json)
+
+'''
+## Metrics ##
 
 ## ROC Curve ##
 fpr = dict()
@@ -107,3 +110,9 @@ plt.title('ROC curve')
 plt.xlabel('False Positive Rate')
 plt.ylabel('True Positive Rate')
 plt.savefig('output/roc_curve.png', format="png")
+
+
+# csv classification report
+# split curves into 2 figures
+# auc and accuracy
+# confusion matrix w/ 8 figures
