@@ -3,6 +3,7 @@ import math
 import os
 import pandas as pd
 import numpy as np
+import seaborn as sns
 import matplotlib.pyplot as plt
 from sklearn.linear_model import LogisticRegression
 from sklearn.naive_bayes import MultinomialNB
@@ -76,12 +77,35 @@ y_predict = pd.DataFrame.sparse.from_spmatrix(y_pred, columns=classes) # Make y_
 
 y_predictArray = np.array(y_predict)
 y_testArray = np.array(y_test)
+
 # Step 3: Evaluate the classifier using various measures
 ## Confusion Matrices ## 
-# Create a plot with all the confusion matrix and put it in dvc pipeline ?
-confusionMatrixCP = multilabel_confusion_matrix(y_test, y_pred)[0]
-#print(confusionMatrixCP)
-score = classification_report(y_test, y_predict, output_dict=False, target_names=classes, zero_division=0)
+cf_matrix = multilabel_confusion_matrix(y_test, y_pred)
+
+def print_confusion_matrix(confusion_matrix, axes, class_label, class_names, fontsize=14):
+
+    df_cm = pd.DataFrame(
+        confusion_matrix, index=class_names, columns=class_names,
+    )
+
+    try:
+        heatmap = sns.heatmap(df_cm, annot=True, fmt="d", cbar=False, ax=axes)
+    except ValueError:
+        raise ValueError("Confusion matrix values must be integers.")
+    heatmap.yaxis.set_ticklabels(heatmap.yaxis.get_ticklabels(), rotation=0, ha='right', fontsize=fontsize)
+    heatmap.xaxis.set_ticklabels(heatmap.xaxis.get_ticklabels(), rotation=45, ha='right', fontsize=fontsize)
+    axes.set_title(f"{classe}")
+
+fig, ax = plt.subplots(2, 4, figsize=(12, 7), sharex='col')
+    
+for axes, cfs_matrix, classe in zip(ax.flatten(), cf_matrix, classes):
+    print_confusion_matrix(cfs_matrix, axes, classe, ["0", "1"])
+fig.supxlabel("Predicted Label")
+fig.supylabel("True Label")
+fig.subplots_adjust(hspace=0.5)
+plt.savefig('output/confusionMatrix.png', format="png")
+
+#score = classification_report(y_test, y_predict, output_dict=False, target_names=classes, zero_division=0)
 #print(score) # NOT SURE IF WE KEEP CLASSIFICATION REPORT
 
 ## Precision Recall Curve ##
@@ -122,5 +146,4 @@ plt.savefig('output/roc_curve.png', format="png")
 
 
 # csv classification report
-# auc and accuracy
 # confusion matrix w/ 8 figures
