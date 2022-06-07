@@ -4,6 +4,8 @@ import string
 import dvc.api as dvc
 from nltk.corpus import stopwords
 
+import nltk
+nltk.download()
 # // Functions
 
 # Retirer punctuation, chiffres et mettre en minuscule
