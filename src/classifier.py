@@ -11,6 +11,8 @@ from sklearn.model_selection import train_test_split
 from skmultilearn.problem_transform import BinaryRelevance
 from sklearn.metrics import accuracy_score, f1_score, precision_recall_curve, precision_score, recall_score, confusion_matrix, roc_auc_score, roc_curve, multilabel_confusion_matrix, classification_report
 import yaml
+import dvc.api as dvc
+
 
 ## Functions ##
 ## TO DO 
@@ -40,7 +42,13 @@ with open("./params.yaml") as conf_file:
     params = yaml.safe_load(conf_file)
 print(params)
 
-data = pd.read_excel(params['data']['dataset'])  
+with dvc.open(
+        './data/output_cleaning.xlsx',
+        mode='rb'
+        ) as fd:
+        data = pd.read_excel(fd, sheet_name='Sheet1')
+
+# data = pd.read_excel(params['data']['dataset'])  
 
 # Text preprocessing has already been done (see cleaning.py)
 # Predicting sentences classification one category at a time

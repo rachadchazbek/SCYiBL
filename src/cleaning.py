@@ -75,4 +75,4 @@ data = data.drop_duplicates(subset="Sentence",keep="first").reset_index()
 data['Sentence'] = data['Sentence'].apply(cleaning_stopWords)
 
 # Output the cleaned dataset in xlsx format
-data.to_excel('./output/output_cleaning.xlsx')
+data.to_excel('./data/output_cleaning.xlsx')
