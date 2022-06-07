@@ -93,6 +93,7 @@ plt.ylabel("precision")
 plt.legend(loc="lower left")
 plt.title("precision vs. recall curve")
 plt.savefig('output/pr_curve.png', format="png")
+plt.clf()
 
 # ## Metrics ##
 # dictionnary = { 
