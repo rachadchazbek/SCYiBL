@@ -3,9 +3,16 @@ import re
 import string
 import dvc.api as dvc
 from nltk.corpus import stopwords
-
+import ssl
 import nltk
-nltk.download()
+try:
+    _create_unverified_https_context = ssl._create_unverified_context
+except AttributeError:
+    pass
+else:
+    ssl._create_default_https_context = _create_unverified_https_context
+
+nltk.download('all')
 # // Functions
 
 # Retirer punctuation, chiffres et mettre en minuscule
