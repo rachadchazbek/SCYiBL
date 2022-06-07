@@ -10,7 +10,7 @@ from sklearn.naive_bayes import MultinomialNB
 from sklearn.svm import LinearSVC
 from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
 from sklearn.model_selection import train_test_split
-from skmultilearn.problem_transform import BinaryRelevance, ClassifierChain
+from skmultilearn.problem_transform import BinaryRelevance, ClassifierChain, LabelPowerset
 from sklearn.metrics import accuracy_score, f1_score, precision_recall_curve, precision_score, recall_score, confusion_matrix, roc_auc_score, roc_curve, multilabel_confusion_matrix, classification_report
 import yaml
 import dvc.api as dvc
@@ -70,7 +70,7 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=params['t
 
 # Step 2: Train the classifier and predict for test data
 classifier = modelChoice(params['train']['model'])
-multiLabelModel = ClassifierChain(classifier)
+multiLabelModel = LabelPowerset(classifier)
 multiLabelModel.fit(X_train, y_train) # fit the model with training data
 y_pred = multiLabelModel.predict(X_test) # Make predictions on test data
 y_predict = pd.DataFrame.sparse.from_spmatrix(y_pred, columns=classes) # Make y_pred format similar to y_test
