@@ -125,7 +125,7 @@ plt.clf()
 ## Metrics ##
 dictionnary = { 
      "auc": roc_auc_score(y_testArray, y_predictArray, average='weighted'),
-     #"f1_score": f1_score(y_test, y_predict),
+     "f1_score": f1_score(y_testArray, y_predictArray, average='weighted'),
      "accuracy": accuracy_score(y_testArray, y_predictArray)
 }
 
@@ -147,4 +147,3 @@ plt.savefig('output/roc_curve.png', format="png")
 
 
 # csv classification report
-# confusion matrix w/ 8 figures
