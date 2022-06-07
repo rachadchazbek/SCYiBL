@@ -2,6 +2,7 @@ import json
 import math
 import os
 import pandas as pd
+import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.linear_model import LogisticRegression
 from sklearn.naive_bayes import MultinomialNB
@@ -73,14 +74,15 @@ multiLabelModel.fit(X_train, y_train) # fit the model with training data
 y_pred = multiLabelModel.predict(X_test) # Make predictions on test data
 y_predict = pd.DataFrame.sparse.from_spmatrix(y_pred, columns=classes) # Make y_pred format similar to y_test
 
-
+y_predictArray = np.array(y_predict)
+y_testArray = np.array(y_test)
 # Step 3: Evaluate the classifier using various measures
 ## Confusion Matrices ## 
 # Create a plot with all the confusion matrix and put it in dvc pipeline ?
 confusionMatrixCP = multilabel_confusion_matrix(y_test, y_pred)[0]
-print(confusionMatrixCP)
+#print(confusionMatrixCP)
 score = classification_report(y_test, y_predict, output_dict=False, target_names=classes, zero_division=0)
-print(score) # NOT SURE IF WE KEEP CLASSIFICATION REPORT
+#print(score) # NOT SURE IF WE KEEP CLASSIFICATION REPORT
 
 ## Precision Recall Curve ##
 precision = dict()
@@ -95,19 +97,16 @@ plt.title("precision vs. recall curve")
 plt.savefig('output/pr_curve.png', format="png")
 plt.clf()
 
-# ## Metrics ##
-# dictionnary = { 
-#     "auc": roc_auc_score(y_test, y_predict),
-#     "f1_score": f1_score(y_test, y_predict),
-#     "accuracy": accuracy_score(y_test, y_predict)
-# }
-
-# metrics_json = json.dumps(dictionnary, indent = 4)
-with open("output/metrics.json", "w") as outfile:
-    outfile.write('{}')
-
-
 ## Metrics ##
+dictionnary = { 
+     "auc": roc_auc_score(y_testArray, y_predictArray, average='weighted'),
+     #"f1_score": f1_score(y_test, y_predict),
+     "accuracy": accuracy_score(y_testArray, y_predictArray)
+}
+
+metrics_json = json.dumps(dictionnary, indent = 4)
+with open("output/metrics.json", "w") as outfile:
+    outfile.write(metrics_json)
 
 ## ROC Curve ##
 fpr = dict()
@@ -123,6 +122,5 @@ plt.savefig('output/roc_curve.png', format="png")
 
 
 # csv classification report
-# split curves into 2 figures
 # auc and accuracy
 # confusion matrix w/ 8 figures
