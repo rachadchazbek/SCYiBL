@@ -92,8 +92,9 @@ plt.xlabel("recall")
 plt.ylabel("precision")
 plt.legend(loc="lower left")
 plt.title("precision vs. recall curve")
-plt.savefig('output/pr_curve.png', format="png")
-plt.clf()
+plt.plot()
+#plt.savefig('output/pr_curve.png', format="png")
+#plt.clf()
 
 # ## Metrics ##
 # dictionnary = { 
@@ -119,7 +120,8 @@ plt.xlabel('False Positive Rate')
 plt.ylabel('True Positive Rate')
 plt.legend(loc="best")
 plt.title('ROC curve') 
-plt.savefig('output/roc_curve.png', format="png")
+plt.plot()
+#plt.savefig('output/roc_curve.png', format="png")
 
 
 # csv classification report
