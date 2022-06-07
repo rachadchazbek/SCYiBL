@@ -104,6 +104,7 @@ fig.supxlabel("Predicted Label")
 fig.supylabel("True Label")
 fig.subplots_adjust(hspace=0.5)
 plt.savefig('output/confusionMatrix.png', format="png")
+plt.clf()
 
 #score = classification_report(y_test, y_predict, output_dict=False, target_names=classes, zero_division=0)
 #print(score) # NOT SURE IF WE KEEP CLASSIFICATION REPORT
