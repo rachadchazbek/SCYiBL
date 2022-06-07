@@ -115,9 +115,10 @@ tpr = dict()
 for i in range(n_classes):
     fpr[i], tpr[i], thresholds = roc_curve(y_test.iloc[:,i], y_predict.iloc[:,i])
     plt.plot(fpr[i], tpr[i], lw=2, label=f'{classes[i]}')
-plt.title('ROC curve') 
 plt.xlabel('False Positive Rate')
 plt.ylabel('True Positive Rate')
+plt.legend(loc="best")
+plt.title('ROC curve') 
 plt.savefig('output/roc_curve.png', format="png")
 
 
