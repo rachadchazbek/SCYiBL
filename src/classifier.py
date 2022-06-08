@@ -17,9 +17,6 @@ import dvc.api as dvc
 
 
 ## Functions ##
-## TO DO 
-##ADD MULTI-LABEL CHOICE
-
 def modelChoice(num):
     # can add class_weight='balanced' for LinearSVC and LogisticRegression
     if num == 1:
@@ -106,9 +103,6 @@ fig.subplots_adjust(hspace=0.5)
 plt.savefig('output/confusionMatrix.png', format="png")
 plt.clf()
 
-#score = classification_report(y_test, y_predict, output_dict=False, target_names=classes, zero_division=0)
-#print(score) # NOT SURE IF WE KEEP CLASSIFICATION REPORT
-
 ## Precision Recall Curve ##
 precision = dict()
 recall = dict()
@@ -144,6 +138,3 @@ plt.ylabel('True Positive Rate')
 plt.legend(loc="best")
 plt.title('ROC curve') 
 plt.savefig('output/roc_curve.png', format="png")
-
-
-# csv classification report
