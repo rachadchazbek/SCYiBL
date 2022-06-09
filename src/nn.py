@@ -13,6 +13,11 @@ from keras.models import Sequential
 from keras.layers import Embedding, LSTM, Dense, Dropout
 from keras.initializers import Constant
 
+# Make it multilabel
+# Good metrics
+# Ameliorer le reseau lui même
+## Vectorization
+## word count 
 
 def vectChoice(num, ngram):
     if num == 1:
