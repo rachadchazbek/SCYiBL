@@ -47,15 +47,11 @@ with dvc.open(
         ) as fd:
         data = pd.read_excel(fd, sheet_name='Sheet1')
 
-# data = pd.read_excel(params['data']['dataset'])  
-
 # Text preprocessing has already been done (see cleaning.py)
-# Predicting sentences classification one category at a time
 classes = ['CP', 'Constructivism', 'Coping', 'ED', 'ER/SR', 'Empowerment', 'Exposure/Habit', 'PERMA']
 n_classes = len(classes)
 
-# Step 1: train-test split
-category = params['data']['category'] # NOT NEEDED 
+# Step 1: train-test split 
 # instantiate a vectorizer -> Convert a collection of text documents to a matrix of token counts
 vect = vectChoice(params['train']['vector'], params['train']['ngram'])
 # DTM = document term matrix = frequency of term in sentences
