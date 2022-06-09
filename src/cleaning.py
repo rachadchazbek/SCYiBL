@@ -12,7 +12,7 @@ except AttributeError:
 else:
     ssl._create_default_https_context = _create_unverified_https_context
 
-nltk.download('all')
+nltk.download('punkt')
 # // Functions
 
 # Retirer punctuation, chiffres et mettre en minuscule
