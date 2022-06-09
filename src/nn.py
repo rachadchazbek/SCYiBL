@@ -10,7 +10,7 @@ from sklearn.model_selection import train_test_split
 from keras.preprocessing.text import Tokenizer
 from keras.preprocessing.sequence import pad_sequences
 from keras.models import Sequential
-from keras.layers import Embedding, LSTM, Dense, Dropout
+from keras.layers import Embedding, LSTM, Dense, Dropout, Conv1D, GlobalMaxPooling1D
 from keras.initializers import Constant
 
 # Make it multilabel
@@ -85,13 +85,23 @@ X_test = pad_sequences(testSentences, padding='post', truncating='post', maxlen=
 ## MODEL ##
 model = Sequential()
 
-model.add(Embedding(num_words, 32, input_length=maxlen))
-model.add(LSTM(64, dropout=0.1))
-model.add(Dense(1, activation="sigmoid"))
+# possibilities to also used pre-trained word embedding like GLoVE or word2Vec
+# output_dim needs fine tuning
+model.add(Embedding(input_dim=num_words+1, output_dim=10, input_length=maxlen))
+model.add(Dropout(0.1))
+# Note: 
+# To connect a Dense layer directly to an Embedding layer
+# you must first flatten the 2D output matrix to a 1D vector using the Flatten layer
+# num_filters and kernel_size needs fine tuning 
+model.add(Conv1D(filters=32, kernel_size=5, activation='relu'))
+model.add(GlobalMaxPooling1D())
+# final layer of our neural network will be a dense layer 
+# with a sigmoid activation consisting of units equivalent to the number of classes.
+model.add(Dense(8, activation='sigmoid'))
 model.compile(optimizer='adam',
                   loss='binary_crossentropy',
                   metrics=[tf.keras.metrics.AUC()])
 
 model.summary()
-epochs = 10
-history = model.fit(X_train, y_train["CP"], epochs=epochs, validation_data=(X_test, y_test["CP"]))
+epochs = 20
+history = model.fit(X_train, y_train, epochs=epochs, validation_data=(X_test, y_test))
