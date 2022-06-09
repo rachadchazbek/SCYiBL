@@ -1,5 +1,7 @@
 from ast import Num
 import pandas as pd
+import tensorflow as tf
+from sklearn.metrics import auc
 import yaml
 import dvc.api as dvc
 from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
@@ -37,15 +39,9 @@ classes = ['CP', 'Constructivism', 'Coping', 'ED', 'ER/SR', 'Empowerment', 'Expo
 n_classes = len(classes)
 
 # Step 1: train-test split 
-# instantiate a vectorizer -> Convert a collection of text documents to a matrix of token counts
-vect = vectChoice(params['train']['vector'], params['train']['ngram'])
-# DTM = document term matrix = frequency of term in sentences
 X = data.Sentence # the column text contains textual data to extract features from
-# vect.fit_transform()
 y = data[classes] # this is the columns we are learning to predict.
 
-# Test/Train split
-# split X and y into training and testing sets
 X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=params['train']['random_state'], test_size=params['train']['test_size'])
 
 # Count unique words
@@ -72,11 +68,6 @@ wordIndex = tokenizer.word_index
 
 
 trainSentences = tokenizer.texts_to_sequences(X_train)
-reverse_wordIndex = dict([(value, key) for (key, value) in wordIndex.items()])
-def decode(text):
-    return " ".join([reverse_wordIndex.get(i, "?") for i in text])
-
-
 # Merge every word index to form a sentence of indexes
 # Set maximum length to 10 (under -> completed with 0s, over -> truncated)
 # Training set
@@ -94,7 +85,7 @@ model.add(LSTM(64, dropout=0.1))
 model.add(Dense(1, activation="sigmoid"))
 model.compile(optimizer='adam',
                   loss='binary_crossentropy',
-                  metrics=['accuracy'])
+                  metrics=[tf.keras.metrics.AUC()])
 
 model.summary()
 epochs = 10
