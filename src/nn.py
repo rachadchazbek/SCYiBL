@@ -2,12 +2,11 @@ from ast import Num
 import pandas as pd
 import tensorflow as tf
 from sklearn.metrics import auc
-from scikeras.wrappers import KerasClassifier
 import yaml
 import dvc.api as dvc
 from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
 from collections import Counter
-from sklearn.model_selection import cross_val_score, train_test_split, RepeatedKFold
+from sklearn.model_selection import train_test_split, RepeatedKFold
 from keras.preprocessing.text import Tokenizer
 from keras.preprocessing.sequence import pad_sequences
 from keras.models import Sequential
@@ -21,6 +20,8 @@ from keras.metrics import Recall, AUC, accuracy
 ## Vectorization
 ## word count 
 # Find a way to see results
+# Cross validation 
+# Grid Search
 
 def vectChoice(num, ngram):
     if num == 1:
@@ -111,11 +112,11 @@ testSentences = tokenizer.texts_to_sequences(X_test)
 X_test = pad_sequences(testSentences, padding='post', truncating='post', maxlen=maxlen)
 
 ## MODEL ##
-model = KerasClassifier(createModel(64, 7, embedding_dim=embedding_dim, maxlen=maxlen, vocab_size=vocab_size))
-scores = cross_val_score(model,X, y, cv=cv,scoring='recall')
-#model.fit(X_train, y_train, epochs=epochs, batch_size=batch_size)
-#loss,auc,recall = model.evaluate(X_test, y_test)
-print("Score: ", scores)
+model = createModel(64, 7, embedding_dim=embedding_dim, maxlen=maxlen, vocab_size=vocab_size)
+model.fit(X_train, y_train, epochs=epochs, batch_size=batch_size)
+loss,auc,recall = model.evaluate(X_test, y_test)
+print("AUC: %.2f" % (auc))
+print("Recall: %.2f" % (recall))
 
 #y_pred = model.predict(X_test)
 # predictions = (model.predict(X) > 0.5).astype(int)
