@@ -18,6 +18,7 @@ from keras.initializers import Constant
 # Ameliorer le reseau lui même
 ## Vectorization
 ## word count 
+# Find a way to see results
 
 def vectChoice(num, ngram):
     if num == 1:
