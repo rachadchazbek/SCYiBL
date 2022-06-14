@@ -15,11 +15,8 @@ from keras.layers import Embedding, LSTM, Flatten, Dense, Dropout, Conv1D, Globa
 from keras.initializers import Constant
 from keras.metrics import Recall, AUC, accuracy
 
-# How many layers to use ?
-# How many units for each layer ?
-# Ameliorer le reseau lui même
-## Vectorization
-## word count 
+# Model architecture (What layers to use ? How many layers to use ? How many units for each layer ?)
+## Feature eng (Vectorization, word count per category, sentiment analysis, correlation between category)
 # Cross validation 
 # Grid Search
 
@@ -32,7 +29,7 @@ def vectChoice(num, ngram):
 
     return vect 
 
-def createModel(num_filters, kernel_size, embedding_dim, maxlen, vocab_size):
+def createModel(num_filters, kernel_size, embedding_dim, maxlen, vocab_size, embedding_matrix):
     model = Sequential()
 
     # possibilities to also used pre-trained word embedding like GLoVE or word2Vec
@@ -62,6 +59,28 @@ def wordCounter(text):
             count[word] += 1
     return count 
 
+def loadEmbedding(file):
+    # load the whole embedding into memory
+    embeddings_index = dict()
+    f = open(file, encoding="utf8")
+    for line in f:
+        values = line.split()
+        word = values[0]
+        coefs = np.asarray(values[1:], dtype='float32')
+        embeddings_index[word] = coefs
+    f.close()
+
+    return embeddings_index 
+
+def createEmbeddingMatrix(vocab_size, embedding_dim, embedding_index):
+    # create a weight matrix for words in training docs
+    embedding_matrix = np.zeros((vocab_size, embedding_dim))
+    for word, i in wordIndex.items():
+        embedding_vector = embedding_index.get(word)
+        if embedding_vector is not None:
+            embedding_matrix[i] = embedding_vector
+
+    return embedding_matrix
 
 ## MAIN ## 
 with open("./params.yaml") as conf_file:
@@ -81,7 +100,7 @@ n_classes = len(classes)
 X = data.Sentence # the column text contains textual data to extract features from
 y = data[classes] # this is the columns we are learning to predict.
 
-cv = RepeatedKFold(n_splits=5, random_state=params['train']['random_state'])
+#cv = RepeatedKFold(n_splits=5, random_state=params['train']['random_state'])
 X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=params['train']['random_state'], test_size=params['train']['test_size'])
 
 counter = wordCounter(X)
@@ -110,28 +129,11 @@ testSentences = tokenizer.texts_to_sequences(X_test)
 X_test = pad_sequences(testSentences, padding='post', truncating='post', maxlen=maxlen)
 
 # Word embedding w/ pre-trained model 
-# load the whole embedding into memory
-embeddings_index = dict()
-f = open('glove.6B.100d.txt', encoding="utf8")
-for line in f:
-	values = line.split()
-	word = values[0]
-	coefs = np.asarray(values[1:], dtype='float32')
-	embeddings_index[word] = coefs
-f.close()
-
-print('Loaded %s word vectors.' % len(embeddings_index))
-# create a weight matrix for words in training docs
-embedding_matrix = np.zeros((vocab_size, 100))
-for word, i in wordIndex.items():
-	embedding_vector = embeddings_index.get(word)
-	if embedding_vector is not None:
-		embedding_matrix[i] = embedding_vector
-
-print(embedding_matrix.shape)
+embeddingsIndex = loadEmbedding('glove.6B.100d.txt')
+embeddingMatrix = createEmbeddingMatrix(vocab_size, embedding_dim, embeddingsIndex)
 
 # ## MODEL ##
-model = createModel(64, 7, embedding_dim=embedding_dim, maxlen=maxlen, vocab_size=vocab_size)
+model = createModel(64, 7, embedding_dim=embedding_dim, maxlen=maxlen, vocab_size=vocab_size, embedding_matrix=embeddingMatrix)
 model.fit(X_train, y_train, epochs=epochs, batch_size=batch_size)
 
 ## EVALUATE ## 
@@ -144,4 +146,4 @@ accuracy = accuracy_score(y_pred, y_testArray)
 print("Accuracy: ", accuracy)
 print("f1_score: ", f1_score)
 
-# Graph of accuracy and loss overtime
+# Graph of accuracy and loss over epochs
