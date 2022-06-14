@@ -1,8 +1,9 @@
 from ast import Num
 import pandas as pd
 import tensorflow as tf
-from sklearn.metrics import auc
+from sklearn.metrics import accuracy_score, auc, f1_score, roc_auc_score
 import yaml
+import numpy as np
 import dvc.api as dvc
 from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
 from collections import Counter
@@ -19,10 +20,10 @@ from keras.metrics import Recall, AUC, accuracy
 # Ameliorer le reseau lui même
 ## Vectorization
 ## word count 
-# Find a way to see results
 # Cross validation 
 # Grid Search
 
+## FUNCTIONS ## 
 def vectChoice(num, ngram):
     if num == 1:
         vect = CountVectorizer(ngram_range=(1, ngram))
@@ -35,7 +36,6 @@ def createModel(num_filters, kernel_size, embedding_dim, maxlen, vocab_size):
     model = Sequential()
 
     # possibilities to also used pre-trained word embedding like GLoVE or word2Vec
-    # output_dim needs fine tuning
     model.add(Embedding(input_dim=vocab_size, output_dim=embedding_dim, input_length=maxlen))
     model.add(Dropout(0.1))
     # Note: 
@@ -62,7 +62,7 @@ def wordCounter(text):
             count[word] += 1
     return count 
 
-# Attempt at creating a neural network
+
 ## MAIN ## 
 with open("./params.yaml") as conf_file:
     params = yaml.safe_load(conf_file)
@@ -90,8 +90,8 @@ num_words = len(counter) # 3544 different words overall
 # Main parameters 
 vocab_size = num_words+1
 maxlen = 10 # Max nb of words in a sentence (50% is 8, 75% is 11, max is 26)
-epochs = 10
-embedding_dim = 30
+epochs = 15
+embedding_dim = 30 # EXPLORE
 batch_size = 10
 
 tokenizer = Tokenizer(num_words=num_words)
@@ -100,25 +100,27 @@ tokenizer.fit_on_texts(X_train)
 # Words are indexed by descending order of count
 wordIndex = tokenizer.word_index
 
-
-trainSentences = tokenizer.texts_to_sequences(X_train)
 # Merge every word index to form a sentence of indexes
+trainSentences = tokenizer.texts_to_sequences(X_train)
 # Set maximum length to 10 (under -> completed with 0s, over -> truncated)
 # Training set
 X_train = pad_sequences(trainSentences, padding='post', truncating='post', maxlen=maxlen)
-
-# For test set
+# Test set
 testSentences = tokenizer.texts_to_sequences(X_test)
 X_test = pad_sequences(testSentences, padding='post', truncating='post', maxlen=maxlen)
 
 ## MODEL ##
 model = createModel(64, 7, embedding_dim=embedding_dim, maxlen=maxlen, vocab_size=vocab_size)
 model.fit(X_train, y_train, epochs=epochs, batch_size=batch_size)
-loss,auc,recall = model.evaluate(X_test, y_test)
-print("AUC: %.2f" % (auc))
-print("Recall: %.2f" % (recall))
 
-#y_pred = model.predict(X_test)
-# predictions = (model.predict(X) > 0.5).astype(int)
-#print(y_pred[:10])
-# Graph of accuracy and loss overtime
+## EVALUATE ## 
+y_pred = (model.predict(X_test) > 0.5).astype(int)
+y_testArray = np.array(y_test)
+auc = roc_auc_score(y_pred, y_testArray, average='weighted'),
+accuracy = accuracy_score(y_pred, y_testArray)
+f1_score = f1_score(y_pred, y_testArray, average='weighted')
+print("auc: ", auc)
+print("Accuracy: ", accuracy)
+print("f1_score: ", f1_score)
+
+# # Graph of accuracy and loss overtime
