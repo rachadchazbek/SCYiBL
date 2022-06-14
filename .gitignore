@@ -131,3 +131,4 @@ dmypy.json
 #Ignore all xlsx files
 *.xlsx
 glove.6B.100d.txt
+crawl-300d-2M.vec
