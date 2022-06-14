@@ -11,7 +11,7 @@ from sklearn.model_selection import train_test_split, RepeatedKFold
 from keras.preprocessing.text import Tokenizer
 from keras.preprocessing.sequence import pad_sequences
 from keras.models import Sequential
-from keras.layers import Embedding, LSTM, Dense, Dropout, Conv1D, GlobalMaxPooling1D
+from keras.layers import Embedding, LSTM, Flatten, Dense, Dropout, Conv1D, GlobalMaxPooling1D
 from keras.initializers import Constant
 from keras.metrics import Recall, AUC, accuracy
 
@@ -36,7 +36,7 @@ def createModel(num_filters, kernel_size, embedding_dim, maxlen, vocab_size):
     model = Sequential()
 
     # possibilities to also used pre-trained word embedding like GLoVE or word2Vec
-    model.add(Embedding(input_dim=vocab_size, output_dim=embedding_dim, input_length=maxlen))
+    model.add(Embedding(input_dim=vocab_size, output_dim=embedding_dim, input_length=maxlen, trainable=False, weights=[embedding_matrix]))
     model.add(Dropout(0.1))
     # Note: 
     # To connect a Dense layer directly to an Embedding layer
@@ -85,13 +85,13 @@ cv = RepeatedKFold(n_splits=5, random_state=params['train']['random_state'])
 X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=params['train']['random_state'], test_size=params['train']['test_size'])
 
 counter = wordCounter(X)
-num_words = len(counter) # 3544 different words overall
+num_words = len(counter) # 3545 different words overall
 
 # Main parameters 
 vocab_size = num_words+1
 maxlen = 10 # Max nb of words in a sentence (50% is 8, 75% is 11, max is 26)
 epochs = 15
-embedding_dim = 30 # EXPLORE
+embedding_dim = 100 # EXPLORE
 batch_size = 10
 
 tokenizer = Tokenizer(num_words=num_words)
@@ -109,18 +109,39 @@ X_train = pad_sequences(trainSentences, padding='post', truncating='post', maxle
 testSentences = tokenizer.texts_to_sequences(X_test)
 X_test = pad_sequences(testSentences, padding='post', truncating='post', maxlen=maxlen)
 
-## MODEL ##
+# Word embedding w/ pre-trained model 
+# load the whole embedding into memory
+embeddings_index = dict()
+f = open('glove.6B.100d.txt', encoding="utf8")
+for line in f:
+	values = line.split()
+	word = values[0]
+	coefs = np.asarray(values[1:], dtype='float32')
+	embeddings_index[word] = coefs
+f.close()
+
+print('Loaded %s word vectors.' % len(embeddings_index))
+# create a weight matrix for words in training docs
+embedding_matrix = np.zeros((vocab_size, 100))
+for word, i in wordIndex.items():
+	embedding_vector = embeddings_index.get(word)
+	if embedding_vector is not None:
+		embedding_matrix[i] = embedding_vector
+
+print(embedding_matrix.shape)
+
+# ## MODEL ##
 model = createModel(64, 7, embedding_dim=embedding_dim, maxlen=maxlen, vocab_size=vocab_size)
 model.fit(X_train, y_train, epochs=epochs, batch_size=batch_size)
 
 ## EVALUATE ## 
 y_pred = (model.predict(X_test) > 0.5).astype(int)
 y_testArray = np.array(y_test)
-auc = roc_auc_score(y_pred, y_testArray, average='weighted'),
-accuracy = accuracy_score(y_pred, y_testArray)
 f1_score = f1_score(y_pred, y_testArray, average='weighted')
-print("auc: ", auc)
+#auc = roc_auc_score(y_pred, y_testArray, average='weighted'),
+accuracy = accuracy_score(y_pred, y_testArray)
+#print("auc: ", auc)
 print("Accuracy: ", accuracy)
 print("f1_score: ", f1_score)
 
-# # Graph of accuracy and loss overtime
+# Graph of accuracy and loss overtime
