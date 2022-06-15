@@ -68,6 +68,7 @@ def wordCounter(text):
 
 def loadEmbedding(file):
     # load the whole embedding into memory
+    print('loading word embeddings...')
     embeddings_index = dict()
     f = open(file, encoding="utf8")
     for line in f:
@@ -82,10 +83,14 @@ def loadEmbedding(file):
 def createEmbeddingMatrix(vocab_size, embedding_dim, embedding_index):
     # create a weight matrix for words in training docs
     embedding_matrix = np.zeros((vocab_size, embedding_dim))
+    words_not_found = [] # List of words without embeddings
     for word, i in wordIndex.items():
         embedding_vector = embedding_index.get(word)
         if embedding_vector is not None:
             embedding_matrix[i] = embedding_vector
+        else:
+            words_not_found.append(word)
+    print("Number of words not found: ", len(words_not_found))
 
     return embedding_matrix
 
@@ -137,37 +142,17 @@ testSentences = tokenizer.texts_to_sequences(X_test)
 X_test = pad_sequences(testSentences, padding='post', truncating='post', maxlen=maxlen)
 
 # Word embedding w/ pre-trained model 
-#embeddingsIndex = loadEmbedding('glove.6B.100d.txt')
+#embeddingsIndex = loadEmbedding('crawl-300d-2M.vec')
 #embeddingMatrix = createEmbeddingMatrix(vocab_size, embedding_dim, embeddingsIndex)
-#load embeddings
-print('loading word embeddings...')
-embeddings_index = {}
-f = codecs.open('crawl-300d-2M.vec', encoding='utf-8')
-for line in f:
-    values = line.rstrip().rsplit(' ')
-    word = values[0]
-    coefs = np.asarray(values[1:], dtype='float32')
-    embeddings_index[word] = coefs
-f.close()
-print('found %s word vectors' % len(embeddings_index))
 
-#embedding matrix
-print('preparing embedding matrix...')
-words_not_found = []
-embedding_matrix = np.zeros((vocab_size, embedding_dim))
-for word, i in wordIndex.items():
-    embedding_vector = embeddings_index.get(word)
-    if (embedding_vector is not None) and len(embedding_vector) > 0:
-        # words not found in embedding index will be all-zeros.
-        embedding_matrix[i] = embedding_vector
-    else:
-        words_not_found.append(word)
-print('number of null word embeddings: %d' % np.sum(np.sum(embedding_matrix, axis=1) == 0))
+with open('output/GloveEmbMatrix.pkl', 'rb') as embMatrixFile:
+    embeddingMatrix = pickle.load(embMatrixFile)
 
-print("sample words not found: ", np.random.choice(words_not_found, 10))
+#with open('output/GloveEmbMatrix.pkl', 'wb') as file:
+#    pickle.dump(embeddingMatrix, file)
 
 # ## MODEL ##
-model = createModel(64, 7, embedding_dim=embedding_dim, maxlen=maxlen, vocab_size=vocab_size, embedding_matrix=embedding_matrix)
+model = createModel(64, 7, embedding_dim=embedding_dim, maxlen=maxlen, vocab_size=vocab_size, embedding_matrix=embeddingMatrix)
 model.fit(X_train, y_train, epochs=epochs, batch_size=batch_size)
 
 with open('output/model.pkl', 'wb') as file:
