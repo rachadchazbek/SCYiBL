@@ -1,9 +1,8 @@
 from ast import Num
-import codecs
+import gensim
 import pandas as pd
 import tensorflow as tf
 from sklearn.metrics import accuracy_score, auc, f1_score, roc_auc_score
-from gensim.models import KeyedVectors
 import tqdm
 import yaml
 import numpy as np
@@ -145,11 +144,13 @@ X_test = pad_sequences(testSentences, padding='post', truncating='post', maxlen=
 #embeddingsIndex = loadEmbedding('crawl-300d-2M.vec')
 #embeddingMatrix = createEmbeddingMatrix(vocab_size, embedding_dim, embeddingsIndex)
 
-with open('output/GloveEmbMatrix.pkl', 'rb') as embMatrixFile:
-    embeddingMatrix = pickle.load(embMatrixFile)
+#with open('output/GloveEmbMatrix.pkl', 'rb') as embMatrixFile:
+#    embeddingMatrix = pickle.load(embMatrixFile)
 
 #with open('output/GloveEmbMatrix.pkl', 'wb') as file:
 #    pickle.dump(embeddingMatrix, file)
+
+embeddingMatrix = gensim.models.KeyedVectors.load_word2vec_format(r'C:\Users\theob\Documents\GoogleNews-vectors-negative300.bin\GoogleNews-vectors-negative300.bin', binary=True, encoding="utf8")  
 
 # ## MODEL ##
 model = createModel(64, 7, embedding_dim=embedding_dim, maxlen=maxlen, vocab_size=vocab_size, embedding_matrix=embeddingMatrix)
