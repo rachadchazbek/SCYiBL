@@ -95,7 +95,14 @@ def createEmbeddingMatrix(vocab_size, embedding_dim, embedding_index):
 
 ## MAIN ## 
 with open("./params.yaml") as conf_file:
-    params = yaml.safe_load(conf_file)
+    params = yaml.safe_load(conf_file)['NeuralNetwork']
+
+maxlen = params['maxlen'] 
+epochs = params['epochs']
+embedding_dim = params['embedding_dim'] 
+batch_size = params['batch_size']
+kernel_size = params['kernel_size']
+num_filters = params['num_filters']
 
 with dvc.open(
         DATA_PATH,
@@ -116,14 +123,10 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=params['t
 
 counter = wordCounter(X)
 num_words = len(counter) # 3545 different words overall
+vocab_size = num_words+1
 
 # Main parameters 
-# TODO move to Params.yaml
-vocab_size = num_words+1
-maxlen = 10 # Max nb of words in a sentence (50% is 8, 75% is 11, max is 26)
-epochs = 15
-embedding_dim = 300 # EXPLORE
-batch_size = 10
+
 
 tokenizer = Tokenizer(num_words=num_words)
 tokenizer.fit_on_texts(X_train)
@@ -139,7 +142,7 @@ X_train = pad_sequences(trainSentences, padding='post', truncating='post', maxle
 # Test set
 testSentences = tokenizer.texts_to_sequences(X_test)
 X_test = pad_sequences(testSentences, padding='post', truncating='post', maxlen=maxlen)
-
+ 
 # Word embedding w/ pre-trained model 
 #embeddingsIndex = loadEmbedding('crawl-300d-2M.vec')
 #embeddingMatrix = createEmbeddingMatrix(vocab_size, embedding_dim, embeddingsIndex)
@@ -153,7 +156,7 @@ X_test = pad_sequences(testSentences, padding='post', truncating='post', maxlen=
 embeddingMatrix = gensim.models.KeyedVectors.load_word2vec_format(r'C:\Users\theob\Documents\GoogleNews-vectors-negative300.bin\GoogleNews-vectors-negative300.bin', binary=True, encoding="utf8")  
 
 # ## MODEL ##
-model = createModel(64, 7, embedding_dim=embedding_dim, maxlen=maxlen, vocab_size=vocab_size, embedding_matrix=embeddingMatrix)
+model = createModel(num_filters, kernel_size, embedding_dim, maxlen, vocab_size, embeddingMatrix)
 model.fit(X_train, y_train, epochs=epochs, batch_size=batch_size)
 
 with open('output/model.pkl', 'wb') as file:
