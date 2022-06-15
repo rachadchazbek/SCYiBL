@@ -23,6 +23,9 @@ from keras.metrics import Recall, AUC, accuracy
 # Cross validation 
 # Grid Search
 
+## Constants
+DATA_PATH = './data/output_cleaning.xlsx'
+
 ## FUNCTIONS ## 
 def vectChoice(num, ngram):
     if num == 1:
@@ -90,7 +93,7 @@ with open("./params.yaml") as conf_file:
     params = yaml.safe_load(conf_file)
 
 with dvc.open(
-        './data/output_cleaning.xlsx',
+        DATA_PATH,
         mode='rb'
         ) as fd:
         data = pd.read_excel(fd, sheet_name='Sheet1')
@@ -110,6 +113,7 @@ counter = wordCounter(X)
 num_words = len(counter) # 3545 different words overall
 
 # Main parameters 
+# TODO move to Params.yaml
 vocab_size = num_words+1
 maxlen = 10 # Max nb of words in a sentence (50% is 8, 75% is 11, max is 26)
 epochs = 15
