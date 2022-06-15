@@ -17,6 +17,7 @@ from keras.models import Sequential
 from keras.layers import Embedding, LSTM, Flatten, Dense, Dropout, Conv1D, GlobalMaxPooling1D
 from keras.initializers import Constant
 from keras.metrics import Recall, AUC, accuracy
+import pickle
 
 # Model architecture (What layers to use ? How many layers to use ? How many units for each layer ?)
 ## Feature eng (Vectorization, word count per category, sentiment analysis, correlation between category)
@@ -169,6 +170,9 @@ print("sample words not found: ", np.random.choice(words_not_found, 10))
 model = createModel(64, 7, embedding_dim=embedding_dim, maxlen=maxlen, vocab_size=vocab_size, embedding_matrix=embedding_matrix)
 model.fit(X_train, y_train, epochs=epochs, batch_size=batch_size)
 
+with open('output/model.pkl', 'wb') as file:
+    pickle.dump(model, file)
+    
 ## EVALUATE ## 
 y_pred = (model.predict(X_test) > 0.5).astype(int)
 y_testArray = np.array(y_test)
