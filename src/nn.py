@@ -12,7 +12,7 @@ import dvc.api as dvc
 from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
 from collections import Counter
 from sklearn.model_selection import train_test_split, RepeatedKFold
-from keras.preprocessing.text import Tokenizer
+from keras.preprocessing.text import Tokenizer, text_to_word_sequence
 from keras.preprocessing.sequence import pad_sequences
 from keras.models import Sequential
 from keras.layers import Embedding, LSTM, Flatten, Dense, Dropout, Conv1D, GlobalMaxPooling1D
@@ -118,7 +118,7 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=params['t
 
 counter = wordCounter(X)
 num_words = len(counter) # 3545 different words overall
-vocab_size = num_words+1
+vocab_size = num_words
 
 # Main parameters 
 maxlen = params['NeuralNetwork']['maxlen'] 
@@ -134,8 +134,14 @@ tokenizer.fit_on_texts(X_train)
 # Words are indexed by descending order of count
 wordIndex = tokenizer.word_index
 
+# Create a matrix containing every training sentences as an array of words 
+sentences = []
+for sentence in X:
+    sentences.append(text_to_word_sequence(sentence))
+
 # Merge every word index to form a sentence of indexes
 trainSentences = tokenizer.texts_to_sequences(X_train)
+
 # Set maximum length to 10 (under -> completed with 0s, over -> truncated)
 # Training set
 X_train = pad_sequences(trainSentences, padding='post', truncating='post', maxlen=maxlen)
@@ -154,31 +160,32 @@ X_test = pad_sequences(testSentences, padding='post', truncating='post', maxlen=
 #with open('output/GloveEmbMatrix.pkl', 'rb') as embMatrixFile:
 #    embeddingMatrix = pickle.load(embMatrixFile)
 
-print(X_train)
 # Word embedding w/ our vocabulary
-#embeddingMatrix = Word2Vec(X, )
+embeddingMatrix = Word2Vec(sentences, vector_size=embedding_dim, min_count=1, sg=1)
+print(embeddingMatrix)
 
+## MODEL ##
+model = createModel(num_filters, kernel_size, embedding_dim, maxlen, vocab_size, embedding_matrix=embeddingMatrix)
+model.fit(X_train, y_train, epochs=epochs, batch_size=batch_size)
 
-# ## MODEL ##
-# model = createModel(num_filters, kernel_size, embedding_dim, maxlen, vocab_size, embeddingMatrix)
-# model.fit(X_train, y_train, epochs=epochs, batch_size=batch_size)
-
-# with open('output/model.pkl', 'wb') as file:
-#     pickle.dump(model, file)
+with open('output/model.pkl', 'wb') as file:
+    pickle.dump(model, file)
     
 ## EVALUATE ## 
 y_pred = (model.predict(X_test) > 0.5).astype(int)
 y_testArray = np.array(y_test)
+F1 = f1_score(y_pred, y_testArray, average='weighted')
+print("F1 Score: ",F1)
 
 ## Metrics ##
 dictionnary = { 
-     "AUC": roc_auc_score(y_pred, y_testArray, average='weighted'),
-     "F1_Score": f1_score(y_pred, y_testArray, average='weighted'),
-     "Accuracy": accuracy_score(y_pred, y_testArray)
+    "AUC": roc_auc_score(y_pred, y_testArray, average='weighted'),
+    "F1_Score": f1_score(y_pred, y_testArray, average='weighted'),
+    "Accuracy": accuracy_score(y_pred, y_testArray)
 }
 
 metrics_json = json.dumps(dictionnary, indent = 4)
 with open("output/metrics.json", "w") as outfile:
     outfile.write(metrics_json)
 
-# # Graph of accuracy and loss over epochs
+# Graph of accuracy and loss over epochs
