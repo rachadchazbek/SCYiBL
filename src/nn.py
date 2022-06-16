@@ -96,14 +96,7 @@ def createEmbeddingMatrix(vocab_size, embedding_dim, embedding_index):
 
 ## MAIN ## 
 with open("./params.yaml") as conf_file:
-    params = yaml.safe_load(conf_file)['NeuralNetwork']
-
-maxlen = params['maxlen'] 
-epochs = params['epochs']
-embedding_dim = params['embedding_dim'] 
-batch_size = params['batch_size']
-kernel_size = params['kernel_size']
-num_filters = params['num_filters']
+    params = yaml.safe_load(conf_file)
 
 with dvc.open(
         DATA_PATH,
@@ -127,7 +120,12 @@ num_words = len(counter) # 3545 different words overall
 vocab_size = num_words+1
 
 # Main parameters 
-
+maxlen = params['NeuralNetwork']['maxlen'] 
+epochs = params['NeuralNetwork']['epochs']
+embedding_dim = params['NeuralNetwork']['embedding_dim'] 
+batch_size = params['NeuralNetwork']['batch_size']
+kernel_size = params['NeuralNetwork']['kernel_size']
+num_filters = params['NeuralNetwork']['num_filters']
 
 tokenizer = Tokenizer(num_words=num_words)
 tokenizer.fit_on_texts(X_train)
@@ -155,22 +153,26 @@ X_test = pad_sequences(testSentences, padding='post', truncating='post', maxlen=
 #with open('output/GloveEmbMatrix.pkl', 'rb') as embMatrixFile:
 #    embeddingMatrix = pickle.load(embMatrixFile)
 
+print(X_train)
+# Word embedding w/ our vocabulary
+#embeddingMatrix = Word2Vec(X, )
+
 
 # ## MODEL ##
-model = createModel(num_filters, kernel_size, embedding_dim, maxlen, vocab_size, embeddingMatrix)
-model.fit(X_train, y_train, epochs=epochs, batch_size=batch_size)
+# model = createModel(num_filters, kernel_size, embedding_dim, maxlen, vocab_size, embeddingMatrix)
+# model.fit(X_train, y_train, epochs=epochs, batch_size=batch_size)
 
-with open('output/model.pkl', 'wb') as file:
-    pickle.dump(model, file)
+# with open('output/model.pkl', 'wb') as file:
+#     pickle.dump(model, file)
     
-## EVALUATE ## 
-y_pred = (model.predict(X_test) > 0.5).astype(int)
-y_testArray = np.array(y_test)
-f1_score = f1_score(y_pred, y_testArray, average='weighted')
-#auc = roc_auc_score(y_pred, y_testArray, average='weighted'),
-accuracy = accuracy_score(y_pred, y_testArray)
-#print("auc: ", auc)
-print("Accuracy: ", accuracy)
-print("f1_score: ", f1_score)
+# ## EVALUATE ## 
+# y_pred = (model.predict(X_test) > 0.5).astype(int)
+# y_testArray = np.array(y_test)
+# f1_score = f1_score(y_pred, y_testArray, average='weighted')
+# #auc = roc_auc_score(y_pred, y_testArray, average='weighted'),
+# accuracy = accuracy_score(y_pred, y_testArray)
+# #print("auc: ", auc)
+# print("Accuracy: ", accuracy)
+# print("f1_score: ", f1_score)
 
-# Graph of accuracy and loss over epochs
+# # Graph of accuracy and loss over epochs
