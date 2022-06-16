@@ -176,9 +176,9 @@ y_testArray = np.array(y_test)
 
 ## Metrics ##
 dictionnary = { 
-    #"AUC": roc_auc_score(y_pred, y_testArray, average='weighted'),
-    "f1_Score": f1_score(y_pred, y_testArray, average='weighted'),
-    "accuracy": accuracy_score(y_pred, y_testArray)
+     #"AUC": roc_auc_score(y_pred, y_testArray, average='weighted'),
+     "f1_score": f1_score(y_pred, y_testArray, average='weighted'),
+     "accuracy": accuracy_score(y_pred, y_testArray)
 }
 
 metrics_json = json.dumps(dictionnary, indent = 4)
