@@ -1,10 +1,12 @@
 from ast import Num
 import json
+import seaborn as sns
+import matplotlib.pyplot as plt
 import gensim
 from gensim.models import Word2Vec
 import pandas as pd
 import tensorflow as tf
-from sklearn.metrics import accuracy_score, auc, f1_score, roc_auc_score
+from sklearn.metrics import accuracy_score, auc, f1_score, multilabel_confusion_matrix, roc_auc_score
 import yaml
 import numpy as np
 import dvc.api as dvc
@@ -93,6 +95,21 @@ def createEmbeddingMatrix(vocab_size, embedding_dim, embedding_index):
     print("Number of words not found: ", len(words_not_found))
 
     return embedding_matrix
+
+def print_confusion_matrix(confusion_matrix, axes, class_label, class_names, fontsize=14):
+
+    df_cm = pd.DataFrame(
+        confusion_matrix, index=class_names, columns=class_names,
+    )
+
+    try:
+        heatmap = sns.heatmap(df_cm, annot=True, fmt="d", cbar=False, ax=axes)
+    except ValueError:
+        raise ValueError("Confusion matrix values must be integers.")
+    heatmap.yaxis.set_ticklabels(heatmap.yaxis.get_ticklabels(), rotation=0, ha='right', fontsize=fontsize)
+    heatmap.xaxis.set_ticklabels(heatmap.xaxis.get_ticklabels(), rotation=45, ha='right', fontsize=fontsize)
+    axes.set_title(f"{classe}")
+
 
 ## MAIN ## 
 with open("./params.yaml") as conf_file:
@@ -184,5 +201,17 @@ dictionnary = {
 metrics_json = json.dumps(dictionnary, indent = 4)
 with open("output/metrics.json", "w") as outfile:
     outfile.write(metrics_json)
+
+## Confusion Matrices ## 
+cf_matrix = multilabel_confusion_matrix(y_testArray, y_pred)
+fig, ax = plt.subplots(2, 4, figsize=(12, 7), sharex='col')
+    
+for axes, cfs_matrix, classe in zip(ax.flatten(), cf_matrix, classes):
+    print_confusion_matrix(cfs_matrix, axes, classe, ["0", "1"])
+fig.supxlabel("Predicted Label")
+fig.supylabel("True Label")
+fig.subplots_adjust(hspace=0.5)
+plt.savefig('output/confusionMatrix.png', format="png")
+plt.clf()
 
 # Graph of accuracy and loss over epochs
