@@ -214,4 +214,5 @@ fig.subplots_adjust(hspace=0.5)
 plt.savefig('output/confusionMatrix.png', format="png")
 plt.clf()
 
+## ADD PRECISION AND RECALL CURVE
 # Graph of accuracy and loss over epochs
