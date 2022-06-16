@@ -1,5 +1,6 @@
 from ast import Num
 import gensim
+from gensim import KeyedVectors
 import pandas as pd
 import tensorflow as tf
 from sklearn.metrics import accuracy_score, auc, f1_score, roc_auc_score
@@ -141,16 +142,16 @@ testSentences = tokenizer.texts_to_sequences(X_test)
 X_test = pad_sequences(testSentences, padding='post', truncating='post', maxlen=maxlen)
 
 # Word embedding w/ pre-trained model 
+# Use next 4 lines when we create embbedingMatrix for the 1st time, from a doc downloaded 
 #embeddingsIndex = loadEmbedding('crawl-300d-2M.vec')
 #embeddingMatrix = createEmbeddingMatrix(vocab_size, embedding_dim, embeddingsIndex)
-
-#with open('output/GloveEmbMatrix.pkl', 'rb') as embMatrixFile:
-#    embeddingMatrix = pickle.load(embMatrixFile)
-
 #with open('output/GloveEmbMatrix.pkl', 'wb') as file:
 #    pickle.dump(embeddingMatrix, file)
 
-embeddingMatrix = gensim.models.KeyedVectors.load_word2vec_format(r'C:\Users\theob\Documents\GoogleNews-vectors-negative300.bin\GoogleNews-vectors-negative300.bin', binary=True, encoding="utf8")  
+# Use next 2 lines to load pre-existing embedded Matrices (present in output repository)
+#with open('output/GloveEmbMatrix.pkl', 'rb') as embMatrixFile:
+#    embeddingMatrix = pickle.load(embMatrixFile)
+
 
 # ## MODEL ##
 model = createModel(64, 7, embedding_dim=embedding_dim, maxlen=maxlen, vocab_size=vocab_size, embedding_matrix=embeddingMatrix)
