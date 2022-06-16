@@ -1,4 +1,5 @@
 from ast import Num
+import json
 import gensim
 from gensim.models import Word2Vec
 import pandas as pd
@@ -165,14 +166,19 @@ print(X_train)
 # with open('output/model.pkl', 'wb') as file:
 #     pickle.dump(model, file)
     
-# ## EVALUATE ## 
-# y_pred = (model.predict(X_test) > 0.5).astype(int)
-# y_testArray = np.array(y_test)
-# f1_score = f1_score(y_pred, y_testArray, average='weighted')
-# #auc = roc_auc_score(y_pred, y_testArray, average='weighted'),
-# accuracy = accuracy_score(y_pred, y_testArray)
-# #print("auc: ", auc)
-# print("Accuracy: ", accuracy)
-# print("f1_score: ", f1_score)
+## EVALUATE ## 
+y_pred = (model.predict(X_test) > 0.5).astype(int)
+y_testArray = np.array(y_test)
+
+## Metrics ##
+dictionnary = { 
+     "AUC": roc_auc_score(y_pred, y_testArray, average='weighted'),
+     "F1_Score": f1_score(y_pred, y_testArray, average='weighted'),
+     "Accuracy": accuracy_score(y_pred, y_testArray)
+}
+
+metrics_json = json.dumps(dictionnary, indent = 4)
+with open("output/metrics.json", "w") as outfile:
+    outfile.write(metrics_json)
 
 # # Graph of accuracy and loss over epochs
