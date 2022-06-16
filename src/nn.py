@@ -5,7 +5,6 @@ from gensim.models import Word2Vec
 import pandas as pd
 import tensorflow as tf
 from sklearn.metrics import accuracy_score, auc, f1_score, roc_auc_score
-import tqdm
 import yaml
 import numpy as np
 import dvc.api as dvc
@@ -41,8 +40,7 @@ def createModel(num_filters, kernel_size, embedding_dim, maxlen, vocab_size, emb
     model = Sequential()
 
     # possibilities to also used pre-trained word embedding like GLoVE or word2Vec
-    model.add(Embedding(input_dim=vocab_size, output_dim=embedding_dim, input_length=maxlen, trainable=False, weights=[embedding_matrix]))
-    model.add(Dropout(0.1))
+    model.add(Embedding(input_dim=vocab_size, output_dim=embedding_dim, input_length=maxlen, trainable=False, embeddings_initializer=Constant(embedding_matrix)))
     # Note: 
     # To connect a Dense layer directly to an Embedding layer
     # you must first flatten the 2D output matrix to a 1D vector using the Flatten layer
@@ -51,6 +49,7 @@ def createModel(num_filters, kernel_size, embedding_dim, maxlen, vocab_size, emb
     model.add(GlobalMaxPooling1D())
     model.add(Dense(32, activation='relu'))
     model.add(Dense(10, activation='relu'))
+    model.add(Dropout(0.5))
     # final layer of our neural network will be a dense layer 
     # with a sigmoid activation consisting of units equivalent to the number of classes.
     model.add(Dense(8, activation='sigmoid'))
@@ -118,7 +117,7 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=params['t
 
 counter = wordCounter(X)
 num_words = len(counter) # 3545 different words overall
-vocab_size = num_words
+vocab_size = num_words + 1 
 
 # Main parameters 
 maxlen = params['NeuralNetwork']['maxlen'] 
@@ -151,18 +150,18 @@ X_test = pad_sequences(testSentences, padding='post', truncating='post', maxlen=
  
 # Word embedding w/ pre-trained model 
 # Use next 4 lines when we create embbedingMatrix for the 1st time, from a doc downloaded 
-#embeddingsIndex = loadEmbedding('crawl-300d-2M.vec')
+#embeddingsIndex = loadEmbedding('output/embedding_word2vec.txt')
 #embeddingMatrix = createEmbeddingMatrix(vocab_size, embedding_dim, embeddingsIndex)
-#with open('output/GloveEmbMatrix.pkl', 'wb') as file:
+#with open('output/word2vecEmbMatrix.pkl', 'wb') as file:
 #    pickle.dump(embeddingMatrix, file)
 
 # Use next 2 lines to load pre-existing embedded Matrices (present in output repository)
-#with open('output/GloveEmbMatrix.pkl', 'rb') as embMatrixFile:
-#    embeddingMatrix = pickle.load(embMatrixFile)
+with open('output/fastTextEmbMatrix.pkl', 'rb') as embMatrixFile:
+    embeddingMatrix = pickle.load(embMatrixFile)
 
 # Word embedding w/ our vocabulary
-embeddingMatrix = Word2Vec(sentences, vector_size=embedding_dim, min_count=1, sg=1)
-print(embeddingMatrix)
+#embeddingMatrix = Word2Vec(sentences, vector_size=embedding_dim, min_count=1, sg=1)
+#print(embeddingMatrix.wv.most_similar('mindfulness'))
 
 ## MODEL ##
 model = createModel(num_filters, kernel_size, embedding_dim, maxlen, vocab_size, embedding_matrix=embeddingMatrix)
@@ -174,12 +173,10 @@ with open('output/model.pkl', 'wb') as file:
 ## EVALUATE ## 
 y_pred = (model.predict(X_test) > 0.5).astype(int)
 y_testArray = np.array(y_test)
-F1 = f1_score(y_pred, y_testArray, average='weighted')
-print("F1 Score: ",F1)
 
 ## Metrics ##
 dictionnary = { 
-    "AUC": roc_auc_score(y_pred, y_testArray, average='weighted'),
+    #"AUC": roc_auc_score(y_pred, y_testArray, average='weighted'),
     "F1_Score": f1_score(y_pred, y_testArray, average='weighted'),
     "Accuracy": accuracy_score(y_pred, y_testArray)
 }
