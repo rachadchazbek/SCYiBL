@@ -1,7 +1,7 @@
 from ast import Num
 import json
 import gensim
-from gensim import KeyedVectors
+from gensim.models import Word2Vec
 import pandas as pd
 import tensorflow as tf
 from sklearn.metrics import accuracy_score, auc, f1_score, roc_auc_score
