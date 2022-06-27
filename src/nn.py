@@ -6,6 +6,7 @@ import gensim
 from gensim.models import Word2Vec
 import pandas as pd
 import tensorflow as tf
+from sklearn.utils.class_weight import compute_class_weight
 from sklearn.metrics import accuracy_score, auc, f1_score, multilabel_confusion_matrix, roc_auc_score
 import yaml
 import numpy as np
@@ -181,6 +182,11 @@ with open('output/fastTextEmbMatrix.pkl', 'rb') as embMatrixFile:
 #print(embeddingMatrix.wv.most_similar('mindfulness'))
 
 ## MODEL #
+# weights dictionary to rebalance the dataset 
+# dictionary that maps class names to the importance to apply to each class.
+class_weights = compute_class_weight('balanced',classes=np.chararray(classes), y=y.values)
+class_weights = dict(zip(np.array(classes), class_weights))
+print(class_weights)
 model = createModel(n_classes, num_filters, kernel_size, embedding_dim, maxlen, vocab_size, embedding_matrix=embeddingMatrix)
 model.fit(X_train, y_train, epochs=epochs, batch_size=batch_size)
 
