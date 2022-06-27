@@ -123,8 +123,7 @@ with dvc.open(
         data = pd.read_excel(fd, sheet_name='Sheet1')
 
 # Text preprocessing has already been done (see cleaning.py)
-#classes = ['Coping', 'ER/SR', 'Empowerment', 'PERMA']
-classes = ['CP', 'Constructivism', 'ED', 'Exposure/Habit']
+classes = ['Coping', 'ER/SR', 'Empowerment', 'PERMA']
 n_classes = len(classes)
 
 # Step 1: train-test split 
