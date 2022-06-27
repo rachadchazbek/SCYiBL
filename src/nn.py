@@ -38,7 +38,7 @@ def vectChoice(num, ngram):
 
     return vect 
 
-def createModel(num_filters, kernel_size, embedding_dim, maxlen, vocab_size, embedding_matrix):
+def createModel(n_output, num_filters, kernel_size, embedding_dim, maxlen, vocab_size, embedding_matrix):
     model = Sequential()
 
     # possibilities to also used pre-trained word embedding like GLoVE or word2Vec
@@ -54,10 +54,10 @@ def createModel(num_filters, kernel_size, embedding_dim, maxlen, vocab_size, emb
     model.add(Dropout(0.5))
     # final layer of our neural network will be a dense layer 
     # with a sigmoid activation consisting of units equivalent to the number of classes.
-    model.add(Dense(8, activation='sigmoid'))
+    model.add(Dense(n_output, activation='sigmoid'))
     model.compile(optimizer='adam',
                     loss='binary_crossentropy',
-                    metrics=[AUC(multi_label=True, num_labels=8, from_logits=False), Recall()])
+                    metrics=[AUC(multi_label=True, num_labels=4, from_logits=False), Recall()])
     return model
 
 # Count unique words
@@ -122,7 +122,7 @@ with dvc.open(
         data = pd.read_excel(fd, sheet_name='Sheet1')
 
 # Text preprocessing has already been done (see cleaning.py)
-classes = ['CP', 'Constructivism', 'Coping', 'ED', 'ER/SR', 'Empowerment', 'Exposure/Habit', 'PERMA']
+classes = ['Coping', 'ER/SR', 'Empowerment', 'PERMA']
 n_classes = len(classes)
 
 # Step 1: train-test split 
@@ -180,8 +180,8 @@ with open('output/fastTextEmbMatrix.pkl', 'rb') as embMatrixFile:
 #embeddingMatrix = Word2Vec(sentences, vector_size=embedding_dim, min_count=1, sg=1)
 #print(embeddingMatrix.wv.most_similar('mindfulness'))
 
-## MODEL ##
-model = createModel(num_filters, kernel_size, embedding_dim, maxlen, vocab_size, embedding_matrix=embeddingMatrix)
+## MODEL #
+model = createModel(n_classes, num_filters, kernel_size, embedding_dim, maxlen, vocab_size, embedding_matrix=embeddingMatrix)
 model.fit(X_train, y_train, epochs=epochs, batch_size=batch_size)
 
 with open('output/model.pkl', 'wb') as file:
