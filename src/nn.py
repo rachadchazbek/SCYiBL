@@ -123,7 +123,8 @@ with dvc.open(
         data = pd.read_excel(fd, sheet_name='Sheet1')
 
 # Text preprocessing has already been done (see cleaning.py)
-classes = ['Coping', 'ER/SR', 'Empowerment', 'PERMA']
+#classes = ['Coping', 'ER/SR', 'Empowerment', 'PERMA']
+classes = ['CP', 'Constructivism', 'ED', 'Exposure/Habit']
 n_classes = len(classes)
 
 # Step 1: train-test split 
@@ -184,9 +185,6 @@ with open('output/fastTextEmbMatrix.pkl', 'rb') as embMatrixFile:
 ## MODEL #
 # weights dictionary to rebalance the dataset 
 # dictionary that maps class names to the importance to apply to each class.
-class_weights = compute_class_weight('balanced',classes=np.chararray(classes), y=y.values)
-class_weights = dict(zip(np.array(classes), class_weights))
-print(class_weights)
 model = createModel(n_classes, num_filters, kernel_size, embedding_dim, maxlen, vocab_size, embedding_matrix=embeddingMatrix)
 model.fit(X_train, y_train, epochs=epochs, batch_size=batch_size)
 
