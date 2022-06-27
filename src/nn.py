@@ -1,5 +1,6 @@
 from ast import Num
 import json
+from optparse import Values
 import seaborn as sns
 import matplotlib.pyplot as plt
 import gensim
@@ -58,7 +59,7 @@ def createModel(n_output, num_filters, kernel_size, embedding_dim, maxlen, vocab
     model.add(Dense(n_output, activation='sigmoid'))
     model.compile(optimizer='adam',
                     loss='binary_crossentropy',
-                    metrics=[AUC(multi_label=True, num_labels=4, from_logits=False), Recall()])
+                    metrics=[AUC(multi_label=True, num_labels=n_classes, from_logits=False), Recall()])
     return model
 
 # Count unique words
@@ -123,7 +124,7 @@ with dvc.open(
         data = pd.read_excel(fd, sheet_name='Sheet1')
 
 # Text preprocessing has already been done (see cleaning.py)
-classes = ['Coping', 'ER/SR', 'Empowerment', 'PERMA']
+classes = ['CP', 'Constructivism', 'Coping', 'ED', 'ER/SR', 'Empowerment', 'Exposure/Habit', 'PERMA']
 n_classes = len(classes)
 
 # Step 1: train-test split 
@@ -184,8 +185,11 @@ with open('output/fastTextEmbMatrix.pkl', 'rb') as embMatrixFile:
 ## MODEL #
 # weights dictionary to rebalance the dataset 
 # dictionary that maps class names to the importance to apply to each class.
+weights = compute_class_weight(class_weight='balanced', classes=np.unique(y), y=y.values.reshape(-1))
+weights = dict(enumerate(weights))
+print(weights)
 model = createModel(n_classes, num_filters, kernel_size, embedding_dim, maxlen, vocab_size, embedding_matrix=embeddingMatrix)
-model.fit(X_train, y_train, epochs=epochs, batch_size=batch_size)
+model.fit(X_train, y_train, epochs=epochs, batch_size=batch_size, class_weight=weights)
 
 with open('output/model.pkl', 'wb') as file:
     pickle.dump(model, file)
