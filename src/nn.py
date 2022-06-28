@@ -1,11 +1,13 @@
 from ast import Num
 import json
+from optparse import Values
 import seaborn as sns
 import matplotlib.pyplot as plt
 import gensim
 from gensim.models import Word2Vec
 import pandas as pd
 import tensorflow as tf
+from sklearn.utils.class_weight import compute_class_weight
 from sklearn.metrics import accuracy_score, auc, f1_score, multilabel_confusion_matrix, roc_auc_score
 import yaml
 import numpy as np
@@ -38,7 +40,7 @@ def vectChoice(num, ngram):
 
     return vect 
 
-def createModel(num_filters, kernel_size, embedding_dim, maxlen, vocab_size, embedding_matrix):
+def createModel(n_output, num_filters, kernel_size, embedding_dim, maxlen, vocab_size, embedding_matrix):
     model = Sequential()
 
     # possibilities to also used pre-trained word embedding like GLoVE or word2Vec
@@ -54,10 +56,10 @@ def createModel(num_filters, kernel_size, embedding_dim, maxlen, vocab_size, emb
     model.add(Dropout(0.5))
     # final layer of our neural network will be a dense layer 
     # with a sigmoid activation consisting of units equivalent to the number of classes.
-    model.add(Dense(8, activation='sigmoid'))
+    model.add(Dense(n_output, activation='sigmoid'))
     model.compile(optimizer='adam',
                     loss='binary_crossentropy',
-                    metrics=[AUC(multi_label=True, num_labels=8, from_logits=False), Recall()])
+                    metrics=[AUC(multi_label=True, num_labels=n_classes, from_logits=False), Recall()])
     return model
 
 # Count unique words
@@ -180,9 +182,14 @@ with open('output/fastTextEmbMatrix.pkl', 'rb') as embMatrixFile:
 #embeddingMatrix = Word2Vec(sentences, vector_size=embedding_dim, min_count=1, sg=1)
 #print(embeddingMatrix.wv.most_similar('mindfulness'))
 
-## MODEL ##
-model = createModel(num_filters, kernel_size, embedding_dim, maxlen, vocab_size, embedding_matrix=embeddingMatrix)
-model.fit(X_train, y_train, epochs=epochs, batch_size=batch_size)
+## MODEL #
+# weights dictionary to rebalance the dataset 
+# dictionary that maps class names to the importance to apply to each class.
+weights = compute_class_weight(class_weight='balanced', classes=np.unique(y), y=y.values.reshape(-1))
+weights = dict(enumerate(weights))
+print(weights)
+model = createModel(n_classes, num_filters, kernel_size, embedding_dim, maxlen, vocab_size, embedding_matrix=embeddingMatrix)
+model.fit(X_train, y_train, epochs=epochs, batch_size=batch_size, class_weight=weights)
 
 with open('output/model.pkl', 'wb') as file:
     pickle.dump(model, file)
