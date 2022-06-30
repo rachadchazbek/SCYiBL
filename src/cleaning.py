@@ -1,4 +1,5 @@
 import pandas as pd
+import pickle
 import re
 import string
 import dvc.api as dvc
@@ -82,6 +83,8 @@ data = data.drop_duplicates(subset="Sentence",keep="first").reset_index()
 
 #Remove stopWords
 data['Sentence'] = data['Sentence'].apply(cleaning_stopWords)
+# with open('data/data_huggingface.pkl', 'wb') as file:
+#     pickle.dump(data, file)
 
 # Output the cleaned dataset in xlsx format
 data.to_excel('./data/output_cleaning.xlsx')
