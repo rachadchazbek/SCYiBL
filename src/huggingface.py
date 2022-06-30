@@ -1,4 +1,4 @@
-from datasets import load_dataset
+from datasets import DatasetDict, load_dataset
 from transformers import pipeline
 from transformers import BertConfig, TFBertModel
 from transformers import TFAutoModelForSequenceClassification, AutoTokenizer
@@ -10,15 +10,15 @@ def tokenize_function(example):
     return tokenizer(example["sentence1"], example["sentence2"], truncation=True)
 
 data = load_dataset("pandas", data_files="data\data_huggingface.pkl")
-print(data)
+print(data['train'])
 
-# tokenized_datasets = data['Sentence'].map(tokenize_function, batched=True)
-# print(tokenized_datasets[3])
+#tokenized_datasets = data['Sentence'].map(tokenize_function, batched=True)
+#print(tokenized_datasets[3])
 
-# # distilled BERT 
+# distilled BERT 
 # modelName = "distilbert-base-uncased-finetuned-sst-2-english"
 # model = TFAutoModelForSequenceClassification.from_pretrained(modelName)
-# tokenizer = AutoTokenizer.from_pretrained(modelName)
+#tokenizer = AutoTokenizer.from_pretrained(modelName)
 # # config = BertConfig()
 # inputs = tokenizer(data['Sentence'][3], padding=True, truncation=True, return_tensors="tf")
 # batch = dict(inputs)
