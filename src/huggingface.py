@@ -6,19 +6,22 @@ import tensorflow as tf
 import pandas as pd 
 
 ## FUNCTIONS ##
+modelName = "distilbert-base-uncased-finetuned-sst-2-english"
+model = TFAutoModelForSequenceClassification.from_pretrained(modelName)
+tokenizer = AutoTokenizer.from_pretrained(modelName)
+
 def tokenize_function(example):
-    return tokenizer(example["sentence1"], example["sentence2"], truncation=True)
+     return tokenizer(example['Sentence'], truncation=True)
 
 data = load_dataset("pandas", data_files="data\data_huggingface.pkl")
-print(data['train'])
+tokenized_data = data['train'].map(tokenize_function, batched=True)
+tokenized_data = tokenized_data.train_test_split(test_size=0.2, shuffle=True)
+print(tokenized_data)
 
-#tokenized_datasets = data['Sentence'].map(tokenize_function, batched=True)
+#tokenized_datasets = data['train']['Sentence'].map(tokenize_function, batched=True)
 #print(tokenized_datasets[3])
 
 # distilled BERT 
-# modelName = "distilbert-base-uncased-finetuned-sst-2-english"
-# model = TFAutoModelForSequenceClassification.from_pretrained(modelName)
-#tokenizer = AutoTokenizer.from_pretrained(modelName)
 # # config = BertConfig()
 # inputs = tokenizer(data['Sentence'][3], padding=True, truncation=True, return_tensors="tf")
 # batch = dict(inputs)
