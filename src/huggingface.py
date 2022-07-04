@@ -9,8 +9,12 @@ from keras.losses import BinaryCrossentropy
 from keras.metrics import AUC, accuracy
 import pandas as pd 
 
+# TO DO:
+# See if we can produce data with tokenization using sentencesDataset
+# Otherwise try with previous method and continue watching video
+
 class sentencesDataset(Dataset):
-    
+
     def __init__(self, data_path, tokenizer, categories, max_len):
         self.data_path = data_path
         self.tokenizer = tokenizer
