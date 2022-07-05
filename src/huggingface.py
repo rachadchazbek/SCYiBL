@@ -1,3 +1,4 @@
+from multiprocessing import freeze_support
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -127,28 +128,32 @@ class SentenceClassifier(pl.LightningModule):
         scheduler = get_cosine_schedule_with_warmup(optimizer, warmup_steps, total_steps)
         return [optimizer], [scheduler]
 
+def main():
+    # data Module
+    dataModule = DataModule("data\data_huggingface.pkl", categories, batch_size = 16)
+    dataModule.setup()
 
-# data Module
-dataModule = DataModule("data\data_huggingface.pkl", categories, batch_size = 16)
-dataModule.setup()
+    config = {
+        'model_name':'distilbert-base-uncased', 
+        'n_labels': n_categories,
+        'bs': 16, 
+        'lr': 5e-5,
+        'warmup': 0.2,
+        'train_size': len(dataModule.train_dataloader()),
+        'w_decay': 0.001,
+        'n_epochs': 15
+    }
 
-config = {
-    'model_name':'distilbert-base-uncased', 
-    'n_labels': n_categories,
-    'bs': 16, 
-    'lr': 5e-5,
-    'warmup': 0.2,
-    'train_size': len(dataModule.train_dataloader()),
-    'w_decay': 0.001,
-    'n_epochs': 15
-}
+    # model
+    model = SentenceClassifier(config)
 
-# model
-model = SentenceClassifier(config)
+    # train
+    trainer = pl.Trainer(max_epochs=config['n_epochs'], num_sanity_val_steps=50)
+    trainer.fit(model, dataModule)
 
-# train
-trainer = pl.Trainer(max_epochs=config['n_epochs'], num_sanity_val_steps=50)
-trainer.fit(model, dataModule)
+if __name__ == '__main__':
+    freeze_support()
+    main()
 
 # # def tokenize_function(example):
 # #     return tokenizer(example['Sentence'], truncation=True, padding=True)
