@@ -127,28 +127,28 @@ class SentenceClassifier(pl.LightningModule):
         scheduler = get_cosine_schedule_with_warmup(optimizer, warmup_steps, total_steps)
         return [optimizer], [scheduler]
 
-def main():
-    # data Module
-    dataModule = DataModule("data\data_huggingface.pkl", categories, batch_size = 16)
-    dataModule.setup()
 
-    config = {
-        'model_name':'distilbert-base-uncased', 
-        'n_labels': n_categories,
-        'bs': 16, 
-        'lr': 5e-5,
-        'warmup': 0.2,
-        'train_size': len(dataModule.train_dataloader()),
-        'w_decay': 0.001,
-        'n_epochs': 15
-    }
+# data Module
+dataModule = DataModule("data\data_huggingface.pkl", categories, batch_size = 16)
+dataModule.setup()
 
-    # model
-    model = SentenceClassifier(config)
+config = {
+    'model_name':'distilbert-base-uncased', 
+    'n_labels': n_categories,
+    'bs': 16, 
+    'lr': 5e-5,
+    'warmup': 0.2,
+    'train_size': len(dataModule.train_dataloader()),
+    'w_decay': 0.001,
+    'n_epochs': 15
+}
 
-    # train
-    trainer = pl.Trainer(max_epochs=config['n_epochs'], num_sanity_val_steps=50)
-    trainer.fit(model, dataModule)
+# model
+model = SentenceClassifier(config)
+
+# train
+trainer = pl.Trainer(max_epochs=config['n_epochs'], num_sanity_val_steps=50)
+trainer.fit(model, dataModule)
 
 # # def tokenize_function(example):
 # #     return tokenizer(example['Sentence'], truncation=True, padding=True)
