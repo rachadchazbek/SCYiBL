@@ -1,6 +1,10 @@
 import torch
+import torch.nn as nn
+import torch.nn.functional as F
+from torchmetrics.functional.classification import auroc
+import math
 import pytorch_lightning as pl
-from transformers import TFAutoModelForSequenceClassification, AutoTokenizer
+from transformers import AutoModelForSequenceClassification, AdamW, get_cosine_schedule_with_warmup, AutoTokenizer
 from sklearn.model_selection import train_test_split
 # from transformers import DataCollatorWithPadding
 # import tensorflow as tf
@@ -17,7 +21,7 @@ categories = ['CP', 'Constructivism', 'Coping', 'ED', 'ER/SR', 'Empowerment', 'E
 n_categories = len(categories)
 
 modelName = "distilbert-base-uncased"
-model = TFAutoModelForSequenceClassification.from_pretrained(modelName)
+model = AutoModelForSequenceClassification.from_pretrained(modelName)
 tokenizer = AutoTokenizer.from_pretrained(modelName)
 
 class sentencesDataset(Dataset):
@@ -81,6 +85,35 @@ dataModule = DataModule("data\data_huggingface.pkl", categories)
 dataModule.setup()
 dl = dataModule.train_dataloader()
 print(len(dl))
+
+class SentenceClassifier(pl.LightningModule):
+
+    def __init__(self, config: dict):
+        super().__init__()
+        self.config = config
+        self.pretrained_model = AutoModelForSequenceClassification.from_pretrained(config['model_name'], return_dict=True)
+        self.hidden - nn.Linear(self.pretrained_model.config.hidden_size, self.pretrained_model.config.hidden_size)
+        self.classification - nn.Linear(self.pretrained_model.config.hidden_size, self.config['n_label'])
+        torch.nn.init.xavier_uniform_(self.hidden.weight)
+        torch.nn.init.xavier_uniform_(self.classifier.weight)
+        self.loss_func = nn.BCEWithLogitsLoss(reduction='mean')
+        self.dropout = nn.Dropout() # prevents/reduces overfitting
+
+
+def forward(self, input_ids, attention_mask, labels=None):
+    # distilled BERT model
+    output = self.pretrained_model(input_ids = inputs_ids, attention_mask = attention_mask)
+    pooled_output = torch.mean(output.last_hidden_state, 1)
+    # nn classification layers
+    pooled_output = self.hidden(pooled_output)
+    pooled_output = self.dropout(pooled_output)
+    pooled_output = F.relu(pooled_output)
+    logits = self.classifier(pooled_output)
+    # claculate loss
+    loss = 0
+    if labels is not None:
+        loss = self.loss_func(logits.views(-1, self.config['n_labels']), labels.views(-1,self.config['n_labels']))
+    return loss, logits
 
 # Parameters
 # MAX_LEN = 30
