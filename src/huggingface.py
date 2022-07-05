@@ -77,10 +77,10 @@ class DataModule(pl.LightningDataModule):
             self.test_dataset = test
 
     def train_dataloader(self):
-        return DataLoader(self.train_dataset, batch_size=self.batch_size, num_workers=4, shuffle=True)
+        return DataLoader(self.train_dataset, batch_size=self.batch_size, num_workers=2, shuffle=True)
     
     def test_dataloader(self):
-        return DataLoader(self.test_dataset, batch_size=self.batch_size, num_workers=1, shuffle=False)
+        return DataLoader(self.test_dataset, batch_size=self.batch_size, num_workers=2, shuffle=False)
 
 class SentenceClassifier(pl.LightningModule):
 
@@ -98,7 +98,7 @@ class SentenceClassifier(pl.LightningModule):
 
     def forward(self, input_ids, attention_mask, labels=None):
         # distilled BERT model
-        output = self.pretrained_model(input_ids = inputs_ids, attention_mask = attention_mask)
+        output = self.pretrained_model(input_ids = input_ids, attention_mask = attention_mask)
         pooled_output = torch.mean(output.last_hidden_state, 1)
         # nn classification layers
         pooled_output = self.hidden(pooled_output)
