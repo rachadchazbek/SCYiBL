@@ -1,6 +1,7 @@
-from datasets import  load_dataset
 import torch
+import pytorch_lightning as pl
 from transformers import TFAutoModelForSequenceClassification, AutoTokenizer
+from sklearn.model_selection import train_test_split
 # from transformers import DataCollatorWithPadding
 # import tensorflow as tf
 # from tensorflow.data import Dataset 
@@ -10,7 +11,14 @@ from transformers import TFAutoModelForSequenceClassification, AutoTokenizer
 # from keras.metrics import AUC, accuracy
 import pandas as pd 
 import matplotlib.pyplot as plt
-from torch.utils.data import Dataset
+from torch.utils.data import Dataset, DataLoader
+
+categories = ['CP', 'Constructivism', 'Coping', 'ED', 'ER/SR', 'Empowerment', 'Exposure/Habit', 'PERMA']
+n_categories = len(categories)
+
+modelName = "distilbert-base-uncased"
+model = TFAutoModelForSequenceClassification.from_pretrained(modelName)
+tokenizer = AutoTokenizer.from_pretrained(modelName)
 
 class sentencesDataset(Dataset):
 
@@ -41,23 +49,45 @@ class sentencesDataset(Dataset):
                                             return_attention_mask=True)
         return {'input_ids': tokens.input_ids.flatten(), 'attention_mask': tokens.attention_mask.flatten(), 'labels': categories}
 
+ds = sentencesDataset("data\data_huggingface.pkl", tokenizer, categories)
+train, test = train_test_split(ds, test_size=0.2)
 
-categories = ['CP', 'Constructivism', 'Coping', 'ED', 'ER/SR', 'Empowerment', 'Exposure/Habit', 'PERMA']
-n_categories = len(categories)
+
+class DataModule(pl.LightningDataModule):
+
+    def __init__(self, data_path, categories, batch_size: int = 8, max_token_len: int = 30, model_name ="distilbert-base-uncased"):
+        super().__init__()
+        self.data_path = data_path
+        self.categories = categories
+        self.batch_size = batch_size
+        self.max_token_len = max_token_len
+        self.model_name = model_name
+        self.tokenizer = AutoTokenizer.from_pretrained(model_name)
+
+    def setup(self, stage = None):
+        if stage in (None, "fit"):
+            self.train_dataset = train # unsure
+            self.test_dataset = test # unsure
+        if stage == 'predict':
+            self.test_dataset = test
+
+    def train_dataloader(self):
+        return DataLoader(self.train_dataset, batch_size=self.batch_size, num_workers=1, shuffle=True)
+    
+    def test_dataloader(self):
+        return DataLoader(self.test_dataset, batch_size=self.batch_size, num_workers=1, shuffle=False)
+
+dataModule = DataModule("data\data_huggingface.pkl", categories)
+dataModule.setup()
+dl = dataModule.train_dataloader()
+print(len(dl))
 
 # Parameters
-MAX_LEN = 30
-TRAIN_BATCH_SIZE = 32
-TEST_BATCH_SIZE = 32
-EPOCHS = 15
-LEARNING_RATE = 5e-5
-
-modelName = "distilbert-base-uncased"
-model = TFAutoModelForSequenceClassification.from_pretrained(modelName)
-tokenizer = AutoTokenizer.from_pretrained(modelName)
-
-ds = sentencesDataset("data\data_huggingface.pkl", tokenizer, categories)
-print(ds.__getitem__(0))
+# MAX_LEN = 30
+# TRAIN_BATCH_SIZE = 32
+# TEST_BATCH_SIZE = 32
+# EPOCHS = 15
+# LEARNING_RATE = 5e-5
 
 # # def tokenize_function(example):
 # #     return tokenizer(example['Sentence'], truncation=True, padding=True)
