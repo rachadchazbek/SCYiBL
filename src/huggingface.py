@@ -1,48 +1,47 @@
-from datasets import DatasetDict, load_dataset
+from datasets import  load_dataset
+import torch
 from transformers import TFAutoModelForSequenceClassification, AutoTokenizer
-from transformers import DataCollatorWithPadding
-import tensorflow as tf
-from tensorflow.data import Dataset 
-from tensorflow.keras.optimizers import Adam
-from tensorflow.keras.optimizers.schedules import PolynomialDecay
-from keras.losses import BinaryCrossentropy
-from keras.metrics import AUC, accuracy
+# from transformers import DataCollatorWithPadding
+# import tensorflow as tf
+# from tensorflow.data import Dataset 
+# from tensorflow.keras.optimizers import Adam
+# from tensorflow.keras.optimizers.schedules import PolynomialDecay
+# from keras.losses import BinaryCrossentropy
+# from keras.metrics import AUC, accuracy
 import pandas as pd 
-
-# TO DO:
-# See if we can produce data with tokenization using sentencesDataset
-# Otherwise try with previous method and continue watching video
+import matplotlib.pyplot as plt
+from torch.utils.data import Dataset
 
 class sentencesDataset(Dataset):
 
-    def __init__(self, data_path, tokenizer, categories, max_len):
+    def __init__(self, data_path, tokenizer, categories, max_token_len: int = 30):
         self.data_path = data_path
         self.tokenizer = tokenizer
         self.categories = categories
-        self.max_len = max_len
+        self.max_token_len = max_token_len
         self._prepare_data()
 
     def _prepare_data(self):
-        data = load_dataset("pandas", data_files=self.data_path)
+        data = pd.read_pickle(self.data_path)
+        self.data = data
     
-    def _len__(self):
+    def __len__(self):
         return(len(self.data))
     
     def __getitem__(self, index):
         item = self.data.iloc[index]
         sentence = str(item.Sentence)
-        categories = tf.Tensor(item[self.categories])
+        categories = torch.FloatTensor(item[self.categories])
         tokens = self.tokenizer.encode_plus(sentence, 
                                             add_special_tokens=True, 
-                                            return_tensors='tf',
+                                            return_tensors='pt',
                                             truncation=True,
-                                            max_length=self.max_len, 
+                                            max_length=self.max_token_len, 
                                             padding='max_length',
                                             return_attention_mask=True)
         return {'input_ids': tokens.input_ids.flatten(), 'attention_mask': tokens.attention_mask.flatten(), 'labels': categories}
 
 
-# distilled BERT 
 categories = ['CP', 'Constructivism', 'Coping', 'ED', 'ER/SR', 'Empowerment', 'Exposure/Habit', 'PERMA']
 n_categories = len(categories)
 
@@ -58,43 +57,43 @@ model = TFAutoModelForSequenceClassification.from_pretrained(modelName)
 tokenizer = AutoTokenizer.from_pretrained(modelName)
 
 ds = sentencesDataset("data\data_huggingface.pkl", tokenizer, categories)
-ds.__getitem__(0)
+print(ds.__getitem__(0))
 
-# def tokenize_function(example):
-#     return tokenizer(example['Sentence'], truncation=True, padding=True)
+# # def tokenize_function(example):
+# #     return tokenizer(example['Sentence'], truncation=True, padding=True)
 
-# data = load_dataset("pandas", data_files="data\data_huggingface.pkl")
-# print("data", data['train'][0])
-# tokenized_data = data['train'].map(tokenize_function, batched=True)
-# tokenized_data = tokenized_data.train_test_split(test_size=0.2, shuffle=True)
-# print("tokenized_data", tokenized_data['train'][0])
+# # data = load_dataset("pandas", data_files="data\data_huggingface.pkl")
+# # print("data", data['train'][0])
+# # tokenized_data = data['train'].map(tokenize_function, batched=True)
+# # tokenized_data = tokenized_data.train_test_split(test_size=0.2, shuffle=True)
+# # print("tokenized_data", tokenized_data['train'][0])
 
-# data_collator = DataCollatorWithPadding(tokenizer=tokenizer, return_tensors="tf")
-# tf_train_dataset = tokenized_data['train'].to_tf_dataset(
-#     columns=['attention_mask', 'input_ids'],
-#     label_cols=categories,
-#     shuffle=True,
-#     collate_fn=data_collator,
-#     batch_size=TRAIN_BATCH_SIZE
-# )
-
-# tf_test_dataset = tokenized_data['test'].to_tf_dataset(
-#     columns=['attention_mask', 'input_ids'],
-#     label_cols=categories,
-#     shuffle=False,
-#     collate_fn=data_collator,
-#     batch_size=TEST_BATCH_SIZE
-# )
-
-# print("tf_train_dataset", tf_train_dataset[0])
-# print("tf_test_dataset", tf_test_dataset[0])
-
-# # num_train_steps = len(tf_train_dataset) * EPOCHS
-# # lr_scheduler = PolynomialDecay(
-# #     initial_learning_rate=LEARNING_RATE, end_learning_rate=0.0, decay_steps=num_train_steps
+# # data_collator = DataCollatorWithPadding(tokenizer=tokenizer, return_tensors="tf")
+# # tf_train_dataset = tokenized_data['train'].to_tf_dataset(
+# #     columns=['attention_mask', 'input_ids'],
+# #     label_cols=categories,
+# #     shuffle=True,
+# #     collate_fn=data_collator,
+# #     batch_size=TRAIN_BATCH_SIZE
 # # )
-# # loss = BinaryCrossentropy(from_logits=True)
-# # opt = Adam(learning_rate=lr_scheduler)
-# # model.compile(optimizer=opt, loss=loss, metrics=['accuracy', 'AUC'])
-# # model.fit(tf_train_dataset, validation_data=tf_test_dataset ,epochs=EPOCHS)
-# # y_pred = (model.predict(tf_test_dataset) > 0.5).astype(int)
+
+# # tf_test_dataset = tokenized_data['test'].to_tf_dataset(
+# #     columns=['attention_mask', 'input_ids'],
+# #     label_cols=categories,
+# #     shuffle=False,
+# #     collate_fn=data_collator,
+# #     batch_size=TEST_BATCH_SIZE
+# # )
+
+# # print("tf_train_dataset", tf_train_dataset[0])
+# # print("tf_test_dataset", tf_test_dataset[0])
+
+# # # num_train_steps = len(tf_train_dataset) * EPOCHS
+# # # lr_scheduler = PolynomialDecay(
+# # #     initial_learning_rate=LEARNING_RATE, end_learning_rate=0.0, decay_steps=num_train_steps
+# # # )
+# # # loss = BinaryCrossentropy(from_logits=True)
+# # # opt = Adam(learning_rate=lr_scheduler)
+# # # model.compile(optimizer=opt, loss=loss, metrics=['accuracy', 'AUC'])
+# # # model.fit(tf_train_dataset, validation_data=tf_test_dataset ,epochs=EPOCHS)
+# # # y_pred = (model.predict(tf_test_dataset) > 0.5).astype(int)
