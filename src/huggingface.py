@@ -52,7 +52,7 @@ class sentencesDataset(Dataset):
                                             max_length=self.max_token_len, 
                                             padding='max_length',
                                             return_attention_mask=True)
-        return {'input_ids': tokens.input_ids.flatten(start_dim=1), 'attention_mask': tokens.attention_mask.flatten(start_dim=1), 'labels': categories}
+        return {'input_ids': tokens.input_ids.flatten(), 'attention_mask': tokens.attention_mask.flatten(), 'labels': categories}
 
 ds = sentencesDataset("data\data_huggingface.pkl", tokenizer, categories)
 train, test = train_test_split(ds, test_size=0.2)
