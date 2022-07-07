@@ -133,3 +133,4 @@ dmypy.json
 glove.6B.100d.txt
 crawl-300d-2M.vec
 lightning_logs/version_0/checkpoints/epoch=14-step=1215.ckpt
+lightning_logs/version_8/checkpoints/epoch=14-step=1065.ckpt
