@@ -12,34 +12,13 @@ import seaborn as sns
 from transformers import AutoModel, BertModel, AdamW, get_cosine_schedule_with_warmup, AutoTokenizer, BertTokenizer, get_linear_schedule_with_warmup
 from sklearn.model_selection import train_test_split
 from sklearn import metrics
-# from transformers import DataCollatorWithPadding
-# import tensorflow as tf
-# from tensorflow.data import Dataset 
-# from tensorflow.keras.optimizers import Adam
-# from tensorflow.keras.optimizers.schedules import PolynomialDecay
-# from keras.losses import BinaryCrossentropy
-# from keras.metrics import AUC, accuracy
 import pandas as pd 
 import matplotlib.pyplot as plt
 from torch.utils.data import Dataset, DataLoader
 
 categories = ['CP', 'Constructivism', 'Coping', 'ED', 'ER/SR', 'Empowerment', 'Exposure/Habit', 'PERMA']
 n_categories = len(categories)
-
-config = {
-  "lr": 1e-5,
-  "batch_size": 32,
-  "max_token_len": 128,
-  "n_epochs": 10,
-  "w_decay":0.01,
-  "n_classes":n_categories,
-  "warmup":0.3,
-  "dropout":True,
-  "pre_classifier":'relu',
-  "pool_method":'mean',
-  "class_weight":True,
-  "optim":'sgd'
-}
+model_name = 'distilbert-base-uncased-finetuned-sst-2-english'
 
 class sentencesDataset(Dataset):
 
@@ -222,6 +201,9 @@ class SentenceClassifier(pl.LightningModule):
         return [optimizer],[scheduler]
 
 def main(): 
+    categories = ['CP', 'Constructivism', 'Coping', 'ED', 'ER/SR', 'Empowerment', 'Exposure/Habit', 'PERMA']
+    n_categories = len(categories)
+
     # Split dataset: train 80, test 20 + shuffle 
     def split_data(data_path):
         data = pd.read_pickle(data_path)
@@ -231,20 +213,37 @@ def main():
         return x_train, x_test
 
     data_train, data_test = split_data("data\data_huggingface.pkl")
-    categories = ['CP', 'Constructivism', 'Coping', 'ED', 'ER/SR', 'Empowerment', 'Exposure/Habit', 'PERMA']
-    n_categories = len(categories)
 
     model_name = 'distilbert-base-uncased-finetuned-sst-2-english'
     tokenizer = BertTokenizer.from_pretrained(model_name)
     model = BertModel.from_pretrained(model_name, return_dict=True)
 
-    data_module = DataModule(data_train, data_test, tokenizer, batch_size=config['batch_size'])
+    data_module = DataModule(data_train, data_test, tokenizer, batch_size=32)
     data_module.setup()
+    
+    config = {
+        "lr": 1e-5,
+        "batch_size": 32,
+        "max_token_len": 128,
+        "n_epochs": 10,
+        "weight_decay":0.01,
+        "n_classes":n_categories,
+        "warmup":0.3,
+        "dropout":True,
+        "train_size": len(data_module.train_dataloader()),
+        "pre_classifier":'relu',
+        "pool_method":'mean',
+        "class_weight":None,
+        "optim":'sgd'
+    }
 
     # Modeling
     model = SentenceClassifier(config=config)
     trainer = pl.Trainer(max_epochs=config['n_epochs'], num_sanity_val_steps=50)
     trainer.fit(model, data_module)
+    #trainer.test(model, ) # ckpt 
+
+    # ROC Curve 
 
 # Predict 
 # trained_model = SentenceClassifier.load_from_checkpoint("", n_classes=8)
