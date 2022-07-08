@@ -135,3 +135,4 @@ crawl-300d-2M.vec
 lightning_logs/version_0/checkpoints/epoch=14-step=1215.ckpt
 lightning_logs/version_8/checkpoints/epoch=14-step=1065.ckpt
 lightning_logs/version_9/checkpoints/epoch=9-step=1610.ckpt
+lightning_logs/version_10/checkpoints/epoch=9-step=1610.ckpt

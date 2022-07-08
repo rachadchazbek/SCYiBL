@@ -75,17 +75,17 @@ class DataModule(pl.LightningDataModule):
 
 class SentenceClassifier(pl.LightningModule):
 
-    def __init__(self, n_classes: int = n_categories, model_name = 'bert-base-uncased', n_training_steps=None, n_warmup_steps=None):
+    def __init__(self, n_classes: int = n_categories, model_name = 'distilbert-base-uncased-finetuned-sst-2-english', n_training_steps=None, n_warmup_steps=None):
         super().__init__()
         self.model = BertModel.from_pretrained(model_name, return_dict=True)
-        #self.hidden = nn.Linear(self.model.config.hidden_size, self.model.config.hidden_size)
+        self.hidden = nn.Linear(self.model.config.hidden_size, self.model.config.hidden_size)
         self.classifier = nn.Linear(self.model.config.hidden_size, n_classes)
         self.n_training_steps = n_training_steps
         self.n_warmup_steps = n_warmup_steps
-        #torch.nn.init.xavier_uniform_(self.hidden.weight)
-        #torch.nn.init.xavier_uniform_(self.classifier.weight)
-        self.loss_func = nn.BCELoss() #reduction='mean')
-        self.dropout = nn.Dropout() # prevents/reduces overfitting
+        torch.nn.init.xavier_uniform_(self.hidden.weight)
+        torch.nn.init.xavier_uniform_(self.classifier.weight)
+        self.loss_func = nn.BCEWithLogitsLoss(reduction='mean')
+        self.dropout = nn.Dropout(0.2) # prevents/reduces overfitting
 
 
     def forward(self, input_ids, attention_mask, labels=None):
@@ -93,12 +93,12 @@ class SentenceClassifier(pl.LightningModule):
         output = self.model(input_ids = input_ids, attention_mask = attention_mask)
         output = self.classifier(output.pooler_output)
         output = torch.sigmoid(output)
-        # pooled_output = torch.mean(output.last_hidden_state, 1)
+        pooled_output = torch.mean(output.last_hidden_state, 1)
         # # nn classification layers
-        # pooled_output = self.hidden(pooled_output)
-        # pooled_output = self.dropout(pooled_output)
-        # pooled_output = F.relu(pooled_output)
-        # logits = self.classifier(pooled_output)
+        pooled_output = self.hidden(pooled_output)
+        pooled_output = self.dropout(pooled_output)
+        pooled_output = F.relu(pooled_output)
+        logits = self.classifier(pooled_output)
         # calculate loss
         loss = 0
         if labels is not None:
@@ -167,7 +167,7 @@ class SentenceClassifier(pl.LightningModule):
 #         self.log("ptl/val_avg_roc", np.mean(roc))
 
     def configure_optimizers(self):
-        optimizer = AdamW(self.parameters(), lr=5e-5)
+        optimizer = AdamW(self.parameters(), lr=1.5e-5)
         scheduler = get_cosine_schedule_with_warmup(optimizer, num_warmup_steps=self.n_warmup_steps, num_training_steps=self.n_training_steps)
         return dict(optimizer=optimizer, lr_schedule=scheduler, interval='step')
 
@@ -184,7 +184,7 @@ def main():
     categories = ['CP', 'Constructivism', 'Coping', 'ED', 'ER/SR', 'Empowerment', 'Exposure/Habit', 'PERMA']
     n_categories = len(categories)
 
-    model_name = 'bert-base-uncased'
+    model_name = 'distilbert-base-uncased-finetuned-sst-2-english'
     tokenizer = AutoTokenizer.from_pretrained(model_name)
     model = BertModel.from_pretrained(model_name, return_dict=True)
 
