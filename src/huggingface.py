@@ -42,8 +42,7 @@ class sentencesDataset(Dataset):
                                             padding='max_length',
                                             return_attention_mask=True)
 
-        return {'sentence': sentence,
-                'input_ids': encoding.input_ids.flatten(), 
+        return {'input_ids': encoding.input_ids.flatten(), 
                 'attention_mask': encoding.attention_mask.flatten(), 
                 'labels': torch.FloatTensor(labels)}
 
@@ -132,12 +131,9 @@ class SentenceClassifier(pl.LightningModule):
 
 
     def training_step(self, batch, batch_index):
-        input_ids = batch["input_ids"]
-        attention_mask = batch["attention_mask"]
-        labels = batch["labels"]
-        loss, outputs = self(input_ids, attention_mask, labels)
+        loss, outputs = self(**batch)
         self.log("train loss", loss, prog_bar = True, logger = True)
-        return {"loss": loss, "predictions": outputs, "labels": labels}
+        return {"loss": loss, "predictions": outputs, "labels": batch["labels"]}
 
     def validation_step(self, batch, batch_index):
         input_ids = batch["input_ids"]
@@ -232,19 +228,16 @@ def main():
         "pre_classifier":'relu',
         "pool_method":'mean',
         "class_weight":None,
+        'sample_weight': None,
         "optim":'sgd'
     }
 
     # Modeling
-    model = SentenceClassifier(config=config)
-    trainer = pl.Trainer(max_epochs=config['n_epochs'], num_sanity_val_steps=50, )
+    model = SentenceClassifier(config)
+    trainer = pl.Trainer(max_epochs=config['n_epochs'], num_sanity_val_steps=50)
     checkpoint_path = 'output/preTrainedModel.ckpt'
     trainer.fit(model, data_module)
     trainer.save_checkpoint(checkpoint_path)
-
-# Predict 
-# trained_model = SentenceClassifier.load_from_checkpoint("", n_classes=8)
-#trained_model.freeze() 
 
 if __name__ == '__main__':
     freeze_support()
