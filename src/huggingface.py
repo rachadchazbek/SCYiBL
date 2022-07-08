@@ -239,7 +239,30 @@ def main():
     trainer.fit(model, data_module)
     trainer.save_checkpoint(checkpoint_path)
 
+    # true labels 
+    true_labels = np.array(data_test[categories])
+
+    # pred labels 
+    def predict(m, dm, ckpt_path):
+        predictions = trainer.test(m, dm, ckpt_path)
+        flattened_predictions = [p>0.5 for batch in predictions for p in batch]
+        flattened_predictions = np.stack(flattened_predictions)
+        return flattened_predictions
+    
+    pred_labels = predict(model, data_module, checkpoint_path)
+
+    plt.figure()
+    for i, categorie in enumerate(categories):
+        fpr, tpr, _ = metrics.roc_curve(
+            true_labels[:,i].astype(int), pred_labels[:, i])
+        auc = metrics.roc_auc_score(
+            true_labels[:,i].astype(int), pred_labels[:, i])
+    plt.plot(fpr, tpr, label='%s %g' % (categorie, auc))
+    plt.xlabel('False Positive Rate')
+    plt.ylabel('True Positive Rate')
+    plt.legend(loc='lower right')
+    plt.title('distilBERT Trained - AUC ROC')
+
 if __name__ == '__main__':
     freeze_support()
     main()
-    
