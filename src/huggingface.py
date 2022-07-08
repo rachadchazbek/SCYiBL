@@ -25,6 +25,7 @@ from torch.utils.data import Dataset, DataLoader
 
 categories = ['CP', 'Constructivism', 'Coping', 'ED', 'ER/SR', 'Empowerment', 'Exposure/Habit', 'PERMA']
 n_categories = len(categories)
+model_name = 'distilbert-base-uncased-finetuned-sst-2-english'
 
 config = {
   "lr": 1e-5,
@@ -230,11 +231,10 @@ def main():
         #x_val, x_test = train_test_split(x_valAndTest, test_size=0.66, shuffle=True)
         return x_train, x_test
 
-    data_train, data_test = split_data("data\data_huggingface.pkl")
+    data_train, data_test = split_data("data/data_huggingface.pkl")
     categories = ['CP', 'Constructivism', 'Coping', 'ED', 'ER/SR', 'Empowerment', 'Exposure/Habit', 'PERMA']
     n_categories = len(categories)
 
-    model_name = 'distilbert-base-uncased-finetuned-sst-2-english'
     tokenizer = BertTokenizer.from_pretrained(model_name)
     model = BertModel.from_pretrained(model_name, return_dict=True)
 
@@ -244,7 +244,9 @@ def main():
     # Modeling
     model = SentenceClassifier(config=config)
     trainer = pl.Trainer(max_epochs=config['n_epochs'], num_sanity_val_steps=50)
-    trainer.fit(model, data_module)
+
+    checkpoint_path = 'output/preTrainedModel.ckpt'
+    trainer.fit(model, data_module, ckpt_path=checkpoint_path)
 
 # Predict 
 # trained_model = SentenceClassifier.load_from_checkpoint("", n_classes=8)
