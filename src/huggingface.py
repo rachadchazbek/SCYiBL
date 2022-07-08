@@ -213,8 +213,6 @@ def main():
         return x_train, x_test
 
     data_train, data_test = split_data("data\data_huggingface.pkl")
-
-    model_name = 'distilbert-base-uncased-finetuned-sst-2-english'
     tokenizer = BertTokenizer.from_pretrained(model_name)
     model = BertModel.from_pretrained(model_name, return_dict=True)
 
@@ -240,10 +238,8 @@ def main():
     # Modeling
     model = SentenceClassifier(config=config)
     trainer = pl.Trainer(max_epochs=config['n_epochs'], num_sanity_val_steps=50)
-    trainer.fit(model, data_module)
-    #trainer.test(model, ) # ckpt 
-
-    # ROC Curve 
+    checkpoint_path = 'output/preTrainedModel.ckpt'
+    trainer.fit(model, data_module, ckpt_path=checkpoint_path)
 
 # Predict 
 # trained_model = SentenceClassifier.load_from_checkpoint("", n_classes=8)
