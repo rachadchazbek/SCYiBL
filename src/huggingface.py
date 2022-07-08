@@ -1,13 +1,15 @@
 from multiprocessing import freeze_support
 import torch
+import math
 import torch.nn as nn
+from torch.nn import BCEWithLogitsLoss
 import torch.nn.functional as F
 from torchmetrics.functional.classification import auroc
 from sklearn.model_selection import train_test_split
 import numpy as np
 import pytorch_lightning as pl
 import seaborn as sns
-from transformers import AutoModel, BertModel, AdamW, get_cosine_schedule_with_warmup, AutoTokenizer
+from transformers import AutoModel, BertModel, AdamW, get_cosine_schedule_with_warmup, AutoTokenizer, BertTokenizer, get_linear_schedule_with_warmup
 from sklearn.model_selection import train_test_split
 from sklearn import metrics
 # from transformers import DataCollatorWithPadding
@@ -24,9 +26,24 @@ from torch.utils.data import Dataset, DataLoader
 categories = ['CP', 'Constructivism', 'Coping', 'ED', 'ER/SR', 'Empowerment', 'Exposure/Habit', 'PERMA']
 n_categories = len(categories)
 
+config = {
+  "lr": 1e-5,
+  "batch_size": 32,
+  "max_token_len": 128,
+  "n_epochs": 10,
+  "w_decay":0.01,
+  "n_classes":n_categories,
+  "warmup":0.3,
+  "dropout":True,
+  "pre_classifier":'relu',
+  "pool_method":'mean',
+  "class_weight":True,
+  "optim":'sgd'
+}
+
 class sentencesDataset(Dataset):
 
-    def __init__(self, data: pd.DataFrame, tokenizer: AutoTokenizer, max_token_len: int = 30):
+    def __init__(self, data: pd.DataFrame, tokenizer: BertTokenizer, max_token_len: int = 30):
         self.data = data
         self.tokenizer = tokenizer
         self.max_token_len = max_token_len
@@ -53,7 +70,7 @@ class sentencesDataset(Dataset):
 
 class DataModule(pl.LightningDataModule):
 
-        def __init__(self, data_train, data_test, tokenizer, batch_size = 8, max_token_len = 30):
+        def __init__(self, data_train, data_test, tokenizer, batch_size = 8, max_token_len = 128):
             super().__init__()
             self.data_train = data_train
             self.data_test = data_test
@@ -75,35 +92,65 @@ class DataModule(pl.LightningDataModule):
 
 class SentenceClassifier(pl.LightningModule):
 
-    def __init__(self, n_classes: int = n_categories, model_name = 'distilbert-base-uncased-finetuned-sst-2-english', n_training_steps=None, n_warmup_steps=None):
+    def __init__(self, config: dict):
         super().__init__()
-        self.model = BertModel.from_pretrained(model_name, return_dict=True)
-        self.hidden = nn.Linear(self.model.config.hidden_size, self.model.config.hidden_size)
-        self.classifier = nn.Linear(self.model.config.hidden_size, n_classes)
-        self.n_training_steps = n_training_steps
-        self.n_warmup_steps = n_warmup_steps
-        torch.nn.init.xavier_uniform_(self.hidden.weight)
-        torch.nn.init.xavier_uniform_(self.classifier.weight)
-        self.loss_func = nn.BCEWithLogitsLoss(reduction='mean')
-        self.dropout = nn.Dropout(0.2) # prevents/reduces overfitting
+        self.config = config
+        # distillBert Layer
+        self.bert = BertModel.from_pretrained(model_name, return_dict = True)
+        # classifier and pre-classifier layers -------
+        if self.config['pre_classifier'] is not None:
+            self.pre_classifier = torch.nn.Linear(self.bert.config.hidden_size, 64)
+            self.classifier = torch.nn.Linear(64, self.config['n_classes'])
+            torch.nn.init.xavier_uniform_(self.pre_classifier.weight)
+            torch.nn.init.xavier_uniform_(self.classifier.weight)
+        else:
+            self.classifier = torch.nn.Linear(self.bert.config.hidden_size, self.config['n_classes'])
+            torch.nn.init.xavier_uniform_(self.classifier.weight)
+        # drop outs -------
+        if self.config['dropout']:
+            self.dropout = torch.nn.Dropout(0.2)
+        # loss functions --------
+        if self.config['class_weight'] is not None:
+            self.loss_fct = nn.BCEWithLogitsLoss(pos_weight=self.config['class_weight'], reduction='none')
+        else:
+            print('no class weight')
+        self.loss_fct = nn.BCEWithLogitsLoss(reduction='none')
 
 
-    def forward(self, input_ids, attention_mask, labels=None):
-        # distilled BERT model
-        output = self.model(input_ids = input_ids, attention_mask = attention_mask)
-        output = self.classifier(output.pooler_output)
-        output = torch.sigmoid(output)
-        pooled_output = torch.mean(output.last_hidden_state, 1)
-        # # nn classification layers
-        pooled_output = self.hidden(pooled_output)
-        pooled_output = self.dropout(pooled_output)
-        pooled_output = F.relu(pooled_output)
+    def forward(self, input_ids, attention_mask, sample_weights=None, labels=None):
+        # distillBert layer
+        output = self.bert(input_ids=input_ids, attention_mask=attention_mask)
+
+        # roberta output method
+        if self.config['pool_method'] == 'pooler':
+            pooled_output = output.pooler_output
+        elif self.config['pool_method'] == 'mean':
+            pooled_output = torch.mean(output.last_hidden_state,1)
+
+        # tahn or relu
+        if self.config['pre_classifier'] is not None:
+            pooled_output = self.pre_classifier(pooled_output)
+        if self.config['pre_classifier'] == 'tanh':
+            pooled_output = torch.tanh(pooled_output)
+        else:
+            pooled_output = torch.relu(pooled_output)
+
+        # drop out
+        if self.config['dropout']:
+            pooled_output = self.dropout(pooled_output)
+
+        # final logits
         logits = self.classifier(pooled_output)
+
         # calculate loss
         loss = 0
         if labels is not None:
-            loss = self.loss_func(output, labels)
-        return loss, output
+            loss = self.loss_fct(logits.view(-1, self.config['n_classes']), labels.view(-1, self.config['n_classes']))
+            if self.config['sample_weight'] and sample_weights is not None:
+                loss = loss * sample_weights
+            loss = torch.mean(loss)
+        return loss, logits
+
 
     def training_step(self, batch, batch_index):
         input_ids = batch["input_ids"]
@@ -119,15 +166,16 @@ class SentenceClassifier(pl.LightningModule):
         labels = batch["labels"]
         loss, outputs = self(input_ids, attention_mask, labels)
         self.log("val loss", loss, prog_bar = True, logger = True)
-        return loss
+        return {"val_loss": loss, "predictions":outputs, "labels": labels}
+
 
     def test_step(self, batch, batch_index):
-            input_ids = batch["input_ids"]
-            attention_mask = batch["attention_mask"]
-            labels = batch["labels"]
-            loss, outputs = self(input_ids, attention_mask, labels)
-            self.log("test loss", loss, prog_bar = True, logger = True)
-            return loss
+        input_ids = batch["input_ids"]
+        attention_mask = batch["attention_mask"]
+        labels = batch["labels"]
+        loss, outputs = self(input_ids, attention_mask, labels)
+        self.log("test loss", loss, prog_bar = True, logger = True)
+        return loss
 
     def training_epoch_end(self, outputs):
         labels,predictions, roc =[],[],[]
@@ -146,33 +194,35 @@ class SentenceClassifier(pl.LightningModule):
             roc_score = auroc(predictions[:, i], labels[:, i].int())
             roc.append(roc_score)
             self.logger.experiment.add_scalar(f"Train/{categorie}_roc_auc", roc_score, self.current_epoch)
-        #self.log("ptl/train_avg_roc", np.mean(roc))
+        self.log("ptl/train_avg_roc", np.mean(roc))
 
-#     def validation_epoch_end(self, outputs):
-#         labels,predictions,roc =[],[],[]
+    def validation_epoch_end(self, outputs):
+        labels,predictions,roc =[],[],[]
         
-#         for output in outputs:
-#             for output_labels in output['labels'].detach().cpu():
-#                 labels.append(output_labels)
-#             for output_preds in output['predictions'].detach().cpu():
-#                 predictions.append(output_preds)
+        for output in outputs:
+            for output_labels in output['labels'].detach().cpu():
+                labels.append(output_labels)
+            for output_preds in output['predictions'].detach().cpu():
+                predictions.append(output_preds)
 
-#         labels = torch.stack(labels)
-#         predictions = torch.sigmoid(torch.stack(predictions))
+        labels = torch.stack(labels)
+        predictions = torch.sigmoid(torch.stack(predictions))
 
-#         for i, categorie in enumerate(categories):
-#             roc_score = auroc(predictions[:, i], labels[:, i].int())
-#             roc.append(roc_score)
-#             self.logger.experiment.add_scalar(f"Validation/{categorie}_roc_auc", roc_score, self.current_epoch)
-#         self.log("ptl/val_avg_roc", np.mean(roc))
+        for i, categorie in enumerate(categories):
+            roc_score = auroc(predictions[:, i], labels[:, i].int())
+            roc.append(roc_score)
+            self.logger.experiment.add_scalar(f"Validation/{categorie}_roc_auc", roc_score, self.current_epoch)
+        self.log("ptl/val_avg_roc", np.mean(roc))
 
     def configure_optimizers(self):
-        optimizer = AdamW(self.parameters(), lr=1.5e-5)
-        scheduler = get_cosine_schedule_with_warmup(optimizer, num_warmup_steps=self.n_warmup_steps, num_training_steps=self.n_training_steps)
-        return dict(optimizer=optimizer, lr_schedule=scheduler, interval='step')
+        optimizer = AdamW(self.parameters(), lr=self.config['lr'], weight_decay=self.config['weight_decay'])
+        total_steps = self.config['train_size']/self.config['batch_size']
+        warmup_steps = math.floor(total_steps * self.config['warmup'])
+        scheduler = get_linear_schedule_with_warmup(optimizer, warmup_steps, total_steps)
+        return [optimizer],[scheduler]
 
 def main(): 
-    # Split dataset: train 70, val 10, test 20 + shuffle 
+    # Split dataset: train 80, test 20 + shuffle 
     def split_data(data_path):
         data = pd.read_pickle(data_path)
         data = data.drop(columns=['index'])
@@ -185,49 +235,20 @@ def main():
     n_categories = len(categories)
 
     model_name = 'distilbert-base-uncased-finetuned-sst-2-english'
-    tokenizer = AutoTokenizer.from_pretrained(model_name)
+    tokenizer = BertTokenizer.from_pretrained(model_name)
     model = BertModel.from_pretrained(model_name, return_dict=True)
 
-    EPOCHS = 10
-    BATCH_SIZE = 8
-
-    data_module = DataModule(data_train, data_test, tokenizer, batch_size=BATCH_SIZE)
+    data_module = DataModule(data_train, data_test, tokenizer, batch_size=config['batch_size'])
     data_module.setup()
 
     # Modeling
-    steps_per_epoch = len(data_train)
-    total_training_steps = steps_per_epoch * EPOCHS
-    warmup_steps = total_training_steps // 5 
-
-    model = SentenceClassifier(n_classes=n_categories, n_warmup_steps=warmup_steps, n_training_steps=total_training_steps)
-    trainer = pl.Trainer(max_epochs=EPOCHS, num_sanity_val_steps=50)
+    model = SentenceClassifier(config=config)
+    trainer = pl.Trainer(max_epochs=config['n_epochs'], num_sanity_val_steps=50)
     trainer.fit(model, data_module)
 
 # Predict 
 # trained_model = SentenceClassifier.load_from_checkpoint("", n_classes=8)
-#trained_model.freeze()
-
-
-# def main():
-#     def classify_sentences(model, dm):
-#         predictions = trainer.predict(model, datamodule=dm)
-#         flattened_predictions = np.stack([torch.sigmoid(torch.Tensor(p)) for batch in predictions for p in batch])
-#         return flattened_predictions
-
-#     pred_labels = classify_sentences(model, dataModule)
-#     true_labels = np.array(data_test[categories])
-
-#     plt.figure()
-#     for i, categorie in enumerate(categories):
-#         fpr, tpr, _ = metrics.roc_curve(
-#             true_labels[:,i].astype(int), pred_labels[:, i])
-#         auc = metrics.roc_auc_score(
-#             true_labels[:,i].astype(int), pred_labels[:, i])
-#         plt.plot(fpr, tpr, label='%s %g' % (categorie, auc))
-#     plt.xlabel('False Positive Rate')
-#     plt.ylabel('True Positive Rate')
-#     plt.legend(loc='best')
-#     plt.title('AUC ROC')
+#trained_model.freeze() 
 
 if __name__ == '__main__':
     freeze_support()
