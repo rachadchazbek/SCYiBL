@@ -212,7 +212,7 @@ def main():
         #x_val, x_test = train_test_split(x_valAndTest, test_size=0.66, shuffle=True)
         return x_train, x_test
 
-    data_train, data_test = split_data("data\data_huggingface.pkl")
+    data_train, data_test = split_data("data/data_huggingface.pkl")
     tokenizer = BertTokenizer.from_pretrained(model_name)
     model = BertModel.from_pretrained(model_name, return_dict=True)
 
@@ -237,9 +237,10 @@ def main():
 
     # Modeling
     model = SentenceClassifier(config=config)
-    trainer = pl.Trainer(max_epochs=config['n_epochs'], num_sanity_val_steps=50)
+    trainer = pl.Trainer(max_epochs=config['n_epochs'], num_sanity_val_steps=50, )
     checkpoint_path = 'output/preTrainedModel.ckpt'
-    trainer.fit(model, data_module, ckpt_path=checkpoint_path)
+    trainer.fit(model, data_module)
+    trainer.save_checkpoint(checkpoint_path)
 
 # Predict 
 # trained_model = SentenceClassifier.load_from_checkpoint("", n_classes=8)
