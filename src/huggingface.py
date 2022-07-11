@@ -1,4 +1,5 @@
 from multiprocessing import freeze_support
+from regex import R
 import torch
 import math
 import torch.nn as nn
@@ -11,7 +12,7 @@ import pytorch_lightning as pl
 import seaborn as sns
 from transformers import AutoModel, BertModel, AdamW, AutoTokenizer, BertTokenizer, get_linear_schedule_with_warmup
 from sklearn.model_selection import train_test_split
-from sklearn import metrics
+import evaluate 
 import pandas as pd 
 import matplotlib.pyplot as plt
 from torch.utils.data import Dataset, DataLoader
@@ -259,9 +260,19 @@ def main():
     tpr = dict()
     auc = dict()
     for i in range(n_categories):
-        fpr[i], tpr[i], _ = metrics.roc_curve(true_labels[:,i], pred_labels[:,i])
-        auc[i] = metrics.roc_auc_score(true_labels[:,i], pred_labels[:, i])
+        # fpr[i], tpr[i], _ = metrics.roc_curve(true_labels[:,i], pred_labels[:,i])
+        # auc[i] = metrics.roc_auc_score(true_labels[:,i], pred_labels[:, i])
+        roc_auc_score = evaluate.load("roc_auc")
+        auc[i] = roc_auc_score.compute(references=true_labels[:,i], prediction_scores= pred_labels[:, i])
+
+        precision = evaluate.load("precision")
+        fpr[i] = precision.compute(references=true_labels[:,i], prediction_scores= pred_labels[:, i])
+
+        recall = evaluate.load("recall")
+        tpr[i] = recall.compute(references=true_labels[:,i], prediction_scores= pred_labels[:, i])
+
         plt.plot(fpr[i], tpr[i], lw=2, label=f'{categories[i]}, {auc[i]}')
+
     plt.xlabel('False Positive Rate')
     plt.ylabel('True Positive Rate')
     plt.legend(loc="best")
