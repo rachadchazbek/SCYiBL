@@ -261,7 +261,7 @@ def main():
     plt.ylabel('True Positive Rate')
     plt.legend(loc='lower right')
     plt.title('distilBERT Trained - AUC ROC')
-    plt.plot()
+    plt.show();
 
 if __name__ == '__main__':
     freeze_support()
