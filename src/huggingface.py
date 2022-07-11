@@ -154,9 +154,6 @@ class SentenceClassifier(pl.LightningModule):
         self.log("test loss", loss, prog_bar = True, logger = True)
         return loss
 
-    def predict_step(self, batch, batch_idx: int , dataloader_idx: int = None):
-        return self(batch)
-
     def training_epoch_end(self, outputs):
         labels,predictions, roc =[],[],[]
 
