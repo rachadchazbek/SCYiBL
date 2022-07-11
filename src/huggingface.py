@@ -67,6 +67,8 @@ class DataModule(pl.LightningDataModule):
             return DataLoader(self.test_dataset,batch_size=self.batch_size,num_workers=1)
         def test_dataloader(self):
             return DataLoader(self.test_dataset,batch_size=self.batch_size,num_workers=2, shuffle=False)
+        def predict_dataloader(self):
+            return DataLoader(self.test_dataset,batch_size=self.batch_size,num_workers=2, shuffle=False)
 
 class SentenceClassifier(pl.LightningModule):
 
@@ -154,7 +156,7 @@ class SentenceClassifier(pl.LightningModule):
 
     def predict_step(self, batch, batch_idx: int , dataloader_idx: int = None):
         return self(batch)
-        
+
     def training_epoch_end(self, outputs):
         labels,predictions, roc =[],[],[]
 
