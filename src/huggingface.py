@@ -9,7 +9,7 @@ from sklearn.model_selection import train_test_split
 import numpy as np
 import pytorch_lightning as pl
 import seaborn as sns
-from transformers import AutoModel, BertModel, AdamW, get_cosine_schedule_with_warmup, AutoTokenizer, BertTokenizer, get_linear_schedule_with_warmup
+from transformers import AutoModel, BertModel, AdamW, AutoTokenizer, BertTokenizer, get_linear_schedule_with_warmup
 from sklearn.model_selection import train_test_split
 from sklearn import metrics
 import pandas as pd 
@@ -244,7 +244,7 @@ def main():
 
     # pred labels 
     def predict(m, dm, ckpt_path):
-        predictions = trainer.test(m, dm, ckpt_path)
+        predictions = trainer.predict(m, dm, ckpt_path)
         flattened_predictions = [p>0.5 for batch in predictions for p in batch]
         flattened_predictions = np.stack(flattened_predictions)
         return flattened_predictions
