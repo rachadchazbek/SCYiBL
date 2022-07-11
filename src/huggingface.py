@@ -236,7 +236,7 @@ def main():
     model = SentenceClassifier(config)
     trainer = pl.Trainer(max_epochs=config['n_epochs'], num_sanity_val_steps=50)
     checkpoint_path = 'output/preTrainedModel.ckpt'
-    trainer.fit(model, data_module,ckpt_path=chekpoint_path)
+    trainer.fit(model, data_module,ckpt_path=checkpoint_path)
     trainer.save_checkpoint(checkpoint_path)
 
     # true labels 
