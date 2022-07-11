@@ -140,3 +140,7 @@ lightning_logs/version_18/events.out.tfevents.1657301013.Theo-Laptop.3964.0
 lightning_logs/version_18/hparams.yaml
 lightning_logs/version_18/events.out.tfevents.1657301013.Theo-Laptop.3964.0
 lightning_logs/version_18/events.out.tfevents.1657301013.Theo-Laptop.3964.0
+lightning_logs/version_19/checkpoints/epoch=0-step=41.ckpt
+lightning_logs/version_19/events.out.tfevents.1657310269.Theo-Laptop.15860.0
+lightning_logs/version_19/hparams.yaml
+src/huggingface.py
