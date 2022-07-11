@@ -256,7 +256,7 @@ def main():
             true_labels[:,i].astype(int), pred_labels[:, i])
         auc = metrics.roc_auc_score(
             true_labels[:,i].astype(int), pred_labels[:, i])
-    plt.plot(fpr, tpr, label='%s %g' % (categorie, auc))
+        plt.plot(fpr, tpr, label='%s %g' % (categorie, auc))
     plt.xlabel('False Positive Rate')
     plt.ylabel('True Positive Rate')
     plt.legend(loc='lower right')
