@@ -250,6 +250,10 @@ def main():
     
     pred_labels = predict(model, data_module, checkpoint_path)
 
+    # Converting to binary
+    to_binary = {True: 1, False: 0}
+    pred_labels = np.vectorize(to_binary.get)(pred_labels)
+    true_labels = np.vectorize(to_binary.get)(true_labels)
     plt.figure()
     for i, categorie in enumerate(categories):
         fpr, tpr, _ = metrics.roc_curve(
