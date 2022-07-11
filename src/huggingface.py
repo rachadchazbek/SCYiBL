@@ -254,18 +254,18 @@ def main():
     to_binary = {True: 1, False: 0}
     pred_labels = np.vectorize(to_binary.get)(pred_labels)
     true_labels = np.vectorize(to_binary.get)(true_labels)
-    plt.figure()
-    for i, categorie in enumerate(categories):
-        fpr, tpr, _ = metrics.roc_curve(
-            true_labels[:,i].astype(int), pred_labels[:, i])
-        auc = metrics.roc_auc_score(
-            true_labels[:,i].astype(int), pred_labels[:, i])
-        plt.plot(fpr, tpr, label='%s %g' % (categorie, auc))
+
+    fpr = dict()
+    tpr = dict()
+    auc = dict()
+    for i in range(n_categories):
+        fpr[i], tpr[i], _ = metrics.roc_curve(true_labels.iloc[:,i], pred_labels.iloc[:,i])
+        auc[i] = metrics.roc_auc_score(true_labels.iloc[:,i], pred_labels.iloc[:, i])
+        plt.plot(fpr[i], tpr[i], lw=2, label=f'{categories[i]}, {auc[i]}')
     plt.xlabel('False Positive Rate')
     plt.ylabel('True Positive Rate')
-    plt.legend(loc='lower right')
-    plt.title('distilBERT Trained - AUC ROC')
-    plt.show()
+    plt.legend(loc="best")
+    plt.title('ROC curve') 
 
 if __name__ == '__main__':
     freeze_support()
