@@ -65,8 +65,6 @@ class DataModule(pl.LightningDataModule):
             return DataLoader(self.train_dataset,batch_size=self.batch_size,num_workers=2,shuffle=True)
         def val_dataloader(self):
             return DataLoader(self.test_dataset,batch_size=self.batch_size,num_workers=1)
-        def test_dataloader(self):
-            return DataLoader(self.test_dataset,batch_size=self.batch_size,num_workers=2, shuffle=False)
         def predict_dataloader(self):
             return DataLoader(self.test_dataset,batch_size=self.batch_size,num_workers=2, shuffle=False)
 
@@ -146,7 +144,7 @@ class SentenceClassifier(pl.LightningModule):
         return {"val_loss": loss, "predictions":outputs, "labels": labels}
 
 
-    def test_step(self, batch, batch_index):
+    def predict_step(self, batch, batch_index):
         input_ids = batch["input_ids"]
         attention_mask = batch["attention_mask"]
         labels = batch["labels"]
