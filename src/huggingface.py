@@ -149,8 +149,7 @@ class SentenceClassifier(pl.LightningModule):
         attention_mask = batch["attention_mask"]
         labels = batch["labels"]
         loss, outputs = self(input_ids, attention_mask, labels)
-        self.log("test loss", loss, prog_bar = True, logger = True)
-        return loss
+        return labels
 
     def training_epoch_end(self, outputs):
         labels,predictions, roc =[],[],[]
