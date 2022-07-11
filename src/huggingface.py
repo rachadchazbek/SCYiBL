@@ -266,6 +266,7 @@ def main():
     plt.ylabel('True Positive Rate')
     plt.legend(loc="best")
     plt.title('ROC curve') 
+    plt.show()
 
 if __name__ == '__main__':
     freeze_support()
