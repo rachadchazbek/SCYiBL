@@ -255,14 +255,7 @@ def main():
     # Converting to binary
     to_binary = {True: 1, False: 0}
     pred_labels = np.vectorize(to_binary.get)(pred_labels)
-    #true_labels = np.vectorize(to_binary.get)(true_labels)
-    print('pred label')
-    print(pred_labels[:,1])
-    print(pred_labels.shape)
-    print('true labels')
-    print(true_labels[:,1])
-    print(true_labels.shape)
-
+    true_labels = np.vectorize(to_binary.get)(true_labels)
     fpr = dict()
     tpr = dict()
     auc = dict()
