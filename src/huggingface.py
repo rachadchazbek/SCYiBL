@@ -50,25 +50,26 @@ class sentencesDataset(Dataset):
 
 class DataModule(pl.LightningDataModule):
 
-        def __init__(self, data_train, data_test, tokenizer, batch_size = 8, max_token_len = 128):
+        def __init__(self, data_train, data_test, data_val, tokenizer, batch_size = 8, max_token_len = 128):
             super().__init__()
             self.data_train = data_train
             self.data_test = data_test
+            self.data_val = data_val
             self.batch_size = batch_size
             self.max_token_len = max_token_len
             self.tokenizer = tokenizer
 
         def setup(self, stage=None):
             self.train_dataset = sentencesDataset(self.data_train, self.tokenizer)
-            self.test_dataset  = sentencesDataset(self.data_test, self.tokenizer)
-            #self.val_dataset = sentencesDataset(self.data_val, self.tokenizer)
+            self.test_dataset = sentencesDataset(self.data_test, self.tokenizer)
+            self.val_dataset = sentencesDataset(self.data_val, self.tokenizer)
 
         def train_dataloader(self):
-            return DataLoader(self.train_dataset,batch_size=self.batch_size,num_workers=2,shuffle=True)
-        def val_dataloader(self):
+            return DataLoader(self.train_dataset,batch_size=self.batch_size,num_workers=2,shuffle=False)
+        def test_dataloader(self):
             return DataLoader(self.test_dataset,batch_size=self.batch_size,num_workers=1)
         def predict_dataloader(self):
-            return DataLoader(self.test_dataset,batch_size=self.batch_size,num_workers=2, shuffle=False)
+            return DataLoader(self.val_dataset,batch_size=self.batch_size,num_workers=2, shuffle=False)
 
 class SentenceClassifier(pl.LightningModule):
 
@@ -137,14 +138,13 @@ class SentenceClassifier(pl.LightningModule):
         self.log("train loss", loss, prog_bar = True, logger = True)
         return {"loss": loss, "predictions": outputs, "labels": batch["labels"]}
 
-    def validation_step(self, batch, batch_index):
+    def test_step(self, batch, batch_index):
         input_ids = batch["input_ids"]
         attention_mask = batch["attention_mask"]
         labels = batch["labels"]
         loss, outputs = self(input_ids, attention_mask, labels)
         self.log("val loss", loss, prog_bar = True, logger = True)
         return {"val_loss": loss, "predictions":outputs, "labels": labels}
-
 
     def predict_step(self, batch, batch_index):
         input_ids = batch["input_ids"]
@@ -205,15 +205,15 @@ def main():
     def split_data(data_path):
         data = pd.read_pickle(data_path)
         data = data.drop(columns=['index'])
-        x_train, x_test = train_test_split(data, test_size=0.2, shuffle=True)
-        #x_val, x_test = train_test_split(x_valAndTest, test_size=0.66, shuffle=True)
-        return x_train, x_test
+        x_train, x_testAndVal = train_test_split(data, test_size=0.2, shuffle=True)
+        x_test, x_val = train_test_split(x_testAndVal, test_size=0.66,shuffle=True)
+        return x_train, x_test, x_val
 
-    data_train, data_test = split_data("data/data_huggingface.pkl")
+    data_train, data_test, data_val = split_data("data/data_huggingface.pkl")
     tokenizer = BertTokenizer.from_pretrained(model_name)
     model = BertModel.from_pretrained(model_name, return_dict=True)
 
-    data_module = DataModule(data_train, data_test, tokenizer, batch_size=32)
+    data_module = DataModule(data_train, data_test, data_val, tokenizer, batch_size=32)
     data_module.setup()
     
     config = {
@@ -241,21 +241,27 @@ def main():
     trainer.save_checkpoint(checkpoint_path)
 
     # true labels 
-    true_labels = np.array(data_test[categories])
+    true_labels = np.array(data_val[categories])
 
     # pred labels 
-    def predict(m, dm, ckpt_path):
-        predictions = trainer.predict(m, dm, ckpt_path)
+    def predict(m, dm, ckpt_path, dataloaders):
+        predictions = trainer.predict(m, dm, ckpt_path, dataloaders)
         flattened_predictions = [p>0.5 for batch in predictions for p in batch]
         flattened_predictions = np.stack(flattened_predictions)
         return flattened_predictions
     
-    pred_labels = predict(model, data_module, checkpoint_path)
+    pred_labels = predict(model, data_module, checkpoint_path, data_module.predict_dataloader())
 
     # Converting to binary
     to_binary = {True: 1, False: 0}
     pred_labels = np.vectorize(to_binary.get)(pred_labels)
-    true_labels = np.vectorize(to_binary.get)(true_labels)
+    #true_labels = np.vectorize(to_binary.get)(true_labels)
+    print('pred label')
+    print(pred_labels[:,1])
+    print(pred_labels.shape)
+    print('true labels')
+    print(true_labels[:,1])
+    print(true_labels.shape)
 
     fpr = dict()
     tpr = dict()
