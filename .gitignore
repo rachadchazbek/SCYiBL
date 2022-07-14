@@ -146,3 +146,6 @@ lightning_logs/version_19/hparams.yaml
 src/huggingface.py
 lightning_logs/version_20/events.out.tfevents.1657544762.Theo-Laptop.13164.0
 lightning_logs/version_21/events.out.tfevents.1657569059.Theo-Laptop.4960.0
+
+# Mac files
+.DS_Store
