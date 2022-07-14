@@ -50,7 +50,7 @@ class sentencesDataset(Dataset):
 
 class DataModule(pl.LightningDataModule):
 
-        def __init__(self, data_train, data_val, data_test, tokenizer, batch_size = 8, max_token_len = 128):
+        def __init__(self, data_train, data_test, data_val, tokenizer, batch_size = 8, max_token_len = 128):
             super().__init__()
             self.data_train = data_train
             self.data_test = data_test
@@ -66,10 +66,10 @@ class DataModule(pl.LightningDataModule):
 
         def train_dataloader(self):
             return DataLoader(self.train_dataset,batch_size=self.batch_size,num_workers=2,shuffle=False)
-        def validation_dataloader(self):
-            return DataLoader(self.val_dataset,batch_size=self.batch_size,num_workers=1)
+        def test_dataloader(self):
+            return DataLoader(self.test_dataset,batch_size=self.batch_size,num_workers=1)
         def predict_dataloader(self):
-            return DataLoader(self.test_dataset,batch_size=self.batch_size,num_workers=2, shuffle=False)
+            return DataLoader(self.val_dataset,batch_size=self.batch_size,num_workers=2, shuffle=False)
 
 class SentenceClassifier(pl.LightningModule):
 
@@ -206,10 +206,10 @@ def main():
         data = pd.read_pickle(data_path)
         data = data.drop(columns=['index'])
         x_train, x_testAndVal = train_test_split(data, test_size=0.2, shuffle=True)
-        x_val, x_test = train_test_split(x_testAndVal, test_size=0.66,shuffle=True)
-        return x_train, x_val, x_test
+        x_test, x_val = train_test_split(x_testAndVal, test_size=0.66,shuffle=True)
+        return x_train, x_test, x_val
 
-    data_train, data_val, data_test = split_data("data/data_huggingface.pkl")
+    data_train, data_test, data_val = split_data("data/data_huggingface.pkl")
     tokenizer = BertTokenizer.from_pretrained(model_name)
     model = BertModel.from_pretrained(model_name, return_dict=True)
 
@@ -220,7 +220,7 @@ def main():
         "lr": 1e-5,
         "batch_size": 32,
         "max_token_len": 128,
-        "n_epochs": 1,
+        "n_epochs": 10,
         "weight_decay":0.01,
         "n_classes":n_categories,
         "warmup":0.3,
@@ -235,9 +235,9 @@ def main():
 
     # Modeling
     model = SentenceClassifier(config)
-    trainer = pl.Trainer(max_epochs=config['n_epochs'], num_sanity_val_steps=1, log_every_n_steps=10)
+    trainer = pl.Trainer(max_epochs=config['n_epochs'], num_sanity_val_steps=50)
     checkpoint_path = 'output/preTrainedModel.ckpt'
-    trainer.fit(model, train_dataloaders=data_module.train_dataloader())
+    trainer.fit(model, data_module, ckpt_path=checkpoint_path)
     trainer.save_checkpoint(checkpoint_path)
 
     # true labels 
