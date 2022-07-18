@@ -240,7 +240,7 @@ def main():
     
     config = {
         "lr": 1e-5,
-        "batch_size": 32,
+        "batch_size": 8,
         "max_token_len": 128,
         "n_epochs": 4,
         "weight_decay":0.01,
@@ -259,11 +259,11 @@ def main():
     print('model loading')
     model = SentenceClassifier(config)
     print('trainer')
-    trainer = pl.Trainer(max_epochs=config['n_epochs'], num_sanity_val_steps=50)
+    trainer = pl.Trainer(max_epochs=config['n_epochs'], num_sanity_val_steps=10)
     checkpoint_path = 'output/preTrainedModel.ckpt'
     print('trainer fit')
     trainer.fit(model, data_module, ckpt_path=checkpoint_path)
-    trainer.save_checkpoint(checkpoint_path)
+    trainer.save_checkpoint(checkpoint_path) 
 
     # true labels 
     true_labels = np.array(data_test[categories])
@@ -281,10 +281,12 @@ def main():
     # Converting to binary
     to_binary = {True: 1, False: 0}
     pred_labels = np.vectorize(to_binary.get)(pred_labels)
-    true_labels = np.vectorize(to_binary.get)(true_labels)
+    #true_labels = np.vectorize(to_binary.get)(true_labels)
     fpr = dict()
     tpr = dict()
     auc = dict()
+    print("pred labels", pred_labels)
+    print("true_labels", true_labels)
     for i in range(n_categories):
         fpr[i], tpr[i], _ = metrics.roc_curve(true_labels[:,i], pred_labels[:,i])
         auc[i] = metrics.roc_auc_score(true_labels[:,i], pred_labels[:, i])
@@ -303,6 +305,7 @@ def main():
     plt.title('ROC curve') 
     plt.show()
     # ADD SOME METRICS 
+    print(metrics.classification_report(true_labels, pred_labels, target_names=categories))
 
 if __name__ == '__main__':
     freeze_support()
