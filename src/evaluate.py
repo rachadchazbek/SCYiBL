@@ -170,12 +170,12 @@ class SentenceClassifier(pl.LightningModule):
         self.log("val loss", loss, prog_bar = True, logger = True)
         return {"val_loss": loss, "predictions":outputs, "labels": labels}
 
-    def predict_step(self, batch, batch_index):
-        input_ids = batch["input_ids"]
-        attention_mask = batch["attention_mask"]
-        labels = batch["labels"]
-        loss, outputs = self(input_ids, attention_mask, labels)
-        return labels
+    # def predict_step(self, batch, batch_index):
+    #     input_ids = batch["input_ids"]
+    #     attention_mask = batch["attention_mask"]
+    #     labels = batch["labels"]
+    #     loss, outputs = self(input_ids, attention_mask, labels)
+    #     return labels
 
     def training_epoch_end(self, outputs):
         labels,predictions, roc =[],[],[]
