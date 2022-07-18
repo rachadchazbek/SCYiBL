@@ -149,3 +149,4 @@ lightning_logs/version_21/events.out.tfevents.1657569059.Theo-Laptop.4960.0
 
 # Mac files
 .DS_Store
+lightning_logs/version_55/checkpoints/epoch=3-step=164.ckpt

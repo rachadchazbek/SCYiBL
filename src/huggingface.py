@@ -10,7 +10,7 @@ from sklearn.model_selection import train_test_split
 import numpy as np
 import pytorch_lightning as pl
 import seaborn as sns
-from transformers import AutoModel, BertModel, AdamW, AutoTokenizer, BertTokenizer, get_linear_schedule_with_warmup
+from transformers import DistilBertModel, AdamW, DistilBertTokenizer, get_linear_schedule_with_warmup
 from sklearn.model_selection import train_test_split
 import evaluate 
 from sklearn import metrics
@@ -24,7 +24,7 @@ model_name = 'distilbert-base-uncased-finetuned-sst-2-english'
 
 class sentencesDataset(Dataset):
 
-    def __init__(self, data: pd.DataFrame, tokenizer: BertTokenizer, max_token_len: int = 30):
+    def __init__(self, data: pd.DataFrame, tokenizer: DistilBertTokenizer, max_token_len: int = 30):
         self.data = data
         self.tokenizer = tokenizer
         self.max_token_len = max_token_len
@@ -63,21 +63,33 @@ class DataModule(pl.LightningDataModule):
             self.train_dataset = sentencesDataset(self.data_train, self.tokenizer)
             self.test_dataset = sentencesDataset(self.data_test, self.tokenizer)
             self.val_dataset = sentencesDataset(self.data_val, self.tokenizer)
+            print('train_dataset')
+            print(self.train_dataset)
+            print('test dataset')
+            print(self.test_dataset)
+            print('val dataset')
+            print(self.val_dataset) 
 
         def train_dataloader(self):
+            print('using train dataloader')
+            print(self.train_dataset.__len__())
             return DataLoader(self.train_dataset,batch_size=self.batch_size,num_workers=2,shuffle=False)
-        def test_dataloader(self):
-            return DataLoader(self.test_dataset,batch_size=self.batch_size,num_workers=1)
+        def val_dataloader(self):
+            print('using val dataloader')
+            print(self.val_dataset.__len__())
+            return DataLoader(self.val_dataset,batch_size=self.batch_size,num_workers=1)
         def predict_dataloader(self):
-            return DataLoader(self.val_dataset,batch_size=self.batch_size,num_workers=2, shuffle=False)
+            print('using test dataloader')
+            print(self.test_dataset.__len__())
+            return DataLoader(self.test_dataset,batch_size=self.batch_size,num_workers=2, shuffle=False)
 
 class SentenceClassifier(pl.LightningModule):
 
     def __init__(self, config: dict):
         super().__init__()
         self.config = config
-        # distillBert Layer
-        self.bert = BertModel.from_pretrained(model_name, return_dict = True)
+        # distilBert Layer
+        self.bert = DistilBertModel.from_pretrained(model_name, return_dict = True)
         # classifier and pre-classifier layers -------
         if self.config['pre_classifier'] is not None:
             self.pre_classifier = torch.nn.Linear(self.bert.config.hidden_size, 64)
@@ -138,7 +150,7 @@ class SentenceClassifier(pl.LightningModule):
         self.log("train loss", loss, prog_bar = True, logger = True)
         return {"loss": loss, "predictions": outputs, "labels": batch["labels"]}
 
-    def test_step(self, batch, batch_index):
+    def validation_step(self, batch, batch_index):
         input_ids = batch["input_ids"]
         attention_mask = batch["attention_mask"]
         labels = batch["labels"]
@@ -155,6 +167,7 @@ class SentenceClassifier(pl.LightningModule):
 
     def training_epoch_end(self, outputs):
         labels,predictions, roc =[],[],[]
+        # voir les données sur lesquels le model s'entraine
 
         for output in outputs:
             for output_labels in output['labels'].detach().cpu():
@@ -210,17 +223,26 @@ def main():
         return x_train, x_test, x_val
 
     data_train, data_test, data_val = split_data("data/data_huggingface.pkl")
-    tokenizer = BertTokenizer.from_pretrained(model_name)
-    model = BertModel.from_pretrained(model_name, return_dict=True)
+    print('data train')
+    print(data_train)
+    print('data test')
+    print(data_test)
+    print('data val')
+    print(data_val)
 
+    tokenizer = DistilBertTokenizer.from_pretrained(model_name)
+    #model = DistilBertModel.from_pretrained(model_name, return_dict=True)
+
+    print('data module')
     data_module = DataModule(data_train, data_test, data_val, tokenizer, batch_size=32)
+    print('data setup')
     data_module.setup()
     
     config = {
         "lr": 1e-5,
         "batch_size": 32,
         "max_token_len": 128,
-        "n_epochs": 10,
+        "n_epochs": 4,
         "weight_decay":0.01,
         "n_classes":n_categories,
         "warmup":0.3,
@@ -234,22 +256,26 @@ def main():
     }
 
     # Modeling
+    print('model loading')
     model = SentenceClassifier(config)
+    print('trainer')
     trainer = pl.Trainer(max_epochs=config['n_epochs'], num_sanity_val_steps=50)
     checkpoint_path = 'output/preTrainedModel.ckpt'
-    trainer.fit(model, data_module, ckpt_path=checkpoint_path)
+    print('trainer fit')
+    trainer.fit(model, data_module) #ckpt_path=checkpoint_path
     trainer.save_checkpoint(checkpoint_path)
 
     # true labels 
-    true_labels = np.array(data_val[categories])
+    true_labels = np.array(data_test[categories])
 
     # pred labels 
-    def predict(m, dm, ckpt_path, dataloaders):
-        predictions = trainer.predict(m, dm, ckpt_path, dataloaders)
+    def predict(m, dm, ckpt_path, dataloader):
+        predictions = trainer.predict(m, dm, ckpt_path, dataloader)
         flattened_predictions = [p>0.5 for batch in predictions for p in batch]
         flattened_predictions = np.stack(flattened_predictions)
         return flattened_predictions
     
+    print('time to predict')
     pred_labels = predict(model, data_module, checkpoint_path, data_module.predict_dataloader())
 
     # Converting to binary
@@ -276,6 +302,7 @@ def main():
     plt.legend(loc="best")
     plt.title('ROC curve') 
     plt.show()
+    # ADD SOME METRICS 
 
 if __name__ == '__main__':
     freeze_support()
