@@ -82,6 +82,10 @@ class DataModule(pl.LightningDataModule):
             print('using test dataloader')
             print(self.test_dataset.__len__())
             return DataLoader(self.test_dataset,batch_size=self.batch_size,num_workers=2, shuffle=False)
+        def test_dataloader(self):
+            print('using test dataloader')
+            print(self.test_dataset.__len__())
+            return DataLoader(self.test_dataset,batch_size=self.batch_size,num_workers=2, shuffle=False)
 
 class SentenceClassifier(pl.LightningModule):
 
@@ -149,6 +153,14 @@ class SentenceClassifier(pl.LightningModule):
         loss, outputs = self(**batch)
         self.log("train loss", loss, prog_bar = True, logger = True)
         return {"loss": loss, "predictions": outputs, "labels": batch["labels"]}
+    
+    def test_step(self, batch, batch_idx):
+        input_ids = batch["input_ids"]
+        attention_mask = batch["attention_mask"]
+        labels = batch["labels"]
+        loss, outputs = self(input_ids, attention_mask, labels)
+        self.log("test_loss", loss, prog_bar=True, logger=True)
+        return loss
 
     def validation_step(self, batch, batch_index):
         input_ids = batch["input_ids"]
@@ -187,6 +199,7 @@ class SentenceClassifier(pl.LightningModule):
 
     def validation_epoch_end(self, outputs):
         labels,predictions,roc =[],[],[]
+        fpr, tpr, auc = [],[],[]
         
         for output in outputs:
             for output_labels in output['labels'].detach().cpu():
@@ -198,9 +211,17 @@ class SentenceClassifier(pl.LightningModule):
         predictions = torch.sigmoid(torch.stack(predictions))
 
         for i, categorie in enumerate(categories):
+            fpr[i], tpr[i], _ = metrics.roc_curve(labels[:,i], predictions[:,i])
+            auc[i] = metrics.roc_auc_score(labels[:,i], predictions[:, i])
             roc_score = auroc(predictions[:, i], labels[:, i].int())
             roc.append(roc_score)
             self.logger.experiment.add_scalar(f"Validation/{categorie}_roc_auc", roc_score, self.current_epoch)
+            plt.plot(fpr[i], tpr[i], lw=2, label=f'{categories[i]}, {auc[i]}')
+        plt.xlabel('False Positive Rate')
+        plt.ylabel('True Positive Rate')
+        plt.legend(loc="best")
+        plt.title('ROC curve') 
+        plt.show()
         self.log("ptl/val_avg_roc", np.mean(roc))
 
     def configure_optimizers(self):
@@ -264,48 +285,53 @@ def main():
     print('trainer fit')
     trainer.fit(model, data_module, ckpt_path=checkpoint_path)
     trainer.save_checkpoint(checkpoint_path) 
+    # print("***trainer test***")
+    # trainer.test(model, data_module.test_dataloader())
+    print("***trainer validate***")
+    trainer.validate(model, data_module.val_dataloader())
 
     # true labels 
     true_labels = np.array(data_test[categories])
 
     # pred labels 
-    def predict(m, dm, ckpt_path, dataloader):
-        predictions = trainer.predict(m, dm, ckpt_path, dataloader)
-        flattened_predictions = [p>0.5 for batch in predictions for p in batch]
-        flattened_predictions = np.stack(flattened_predictions)
-        return flattened_predictions
+    # def predict(m, dm, ckpt_path):
+    #     predictions = trainer.predict(m, dm, ckpt_path)
+    #     flattened_predictions = [p>0.5 for batch in predictions for p in batch]
+    #     flattened_predictions = np.stack(flattened_predictions)
+    #     return flattened_predictions
     
-    print('time to predict')
-    pred_labels = predict(model, data_module, checkpoint_path, data_module.predict_dataloader())
+    # print('time to predict')
+    # pred_labels = predict(model, data_module, checkpoint_path)
+    # print(pred_labels[:,2])
 
-    # Converting to binary
-    to_binary = {True: 1, False: 0}
-    pred_labels = np.vectorize(to_binary.get)(pred_labels)
-    #true_labels = np.vectorize(to_binary.get)(true_labels)
-    fpr = dict()
-    tpr = dict()
-    auc = dict()
-    print("pred labels", pred_labels)
-    print("true_labels", true_labels)
-    for i in range(n_categories):
-        fpr[i], tpr[i], _ = metrics.roc_curve(true_labels[:,i], pred_labels[:,i])
-        auc[i] = metrics.roc_auc_score(true_labels[:,i], pred_labels[:, i])
-        # roc_auc_score = evaluate.load("roc_auc")
-        # auc[i] = roc_auc_score.compute(references=true_labels[:,i], prediction_scores= pred_labels[:, i])
+    # # Converting to binary
+    # to_binary = {True: 1, False: 0}
+    # pred_labels = np.vectorize(to_binary.get)(pred_labels)
+    # #true_labels = np.vectorize(to_binary.get)(true_labels)
+    # fpr = dict()
+    # tpr = dict()
+    # auc = dict()
+    # print("pred labels", pred_labels[:,2])
+    # print("true_labels", true_labels[:,2])
+    # for i in range(n_categories):
+    #     fpr[i], tpr[i], _ = metrics.roc_curve(true_labels[:,i], pred_labels[:,i])
+    #     auc[i] = metrics.roc_auc_score(true_labels[:,i], pred_labels[:, i])
+    #     # roc_auc_score = evaluate.load("roc_auc")
+    #     # auc[i] = roc_auc_score.compute(references=true_labels[:,i], prediction_scores= pred_labels[:, i])
 
-        # precision = evaluate.load("precision")
-        # accuracy[i] = precision.compute(references=true_labels[:,i], prediction_scores= pred_labels[:, i])
+    #     # precision = evaluate.load("precision")
+    #     # accuracy[i] = precision.compute(references=true_labels[:,i], prediction_scores= pred_labels[:, i])
 
-        # recall = evaluate.load("recall")
-        # tpr[i] = recall.compute(references=true_labels[:,i], prediction_scores= pred_labels[:, i])
-        plt.plot(fpr[i], tpr[i], lw=2, label=f'{categories[i]}, {auc[i]}')
-    plt.xlabel('False Positive Rate')
-    plt.ylabel('True Positive Rate')
-    plt.legend(loc="best")
-    plt.title('ROC curve') 
-    plt.show()
-    # ADD SOME METRICS 
-    print(metrics.classification_report(true_labels, pred_labels, target_names=categories))
+    #     # recall = evaluate.load("recall")
+    #     # tpr[i] = recall.compute(references=true_labels[:,i], prediction_scores= pred_labels[:, i])
+    #     plt.plot(fpr[i], tpr[i], lw=2, label=f'{categories[i]}, {auc[i]}')
+    # plt.xlabel('False Positive Rate')
+    # plt.ylabel('True Positive Rate')
+    # plt.legend(loc="best")
+    # plt.title('ROC curve') 
+    # plt.show()
+    # # ADD SOME METRICS 
+    # print(metrics.classification_report(true_labels, pred_labels, target_names=categories))
 
 if __name__ == '__main__':
     freeze_support()
