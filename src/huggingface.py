@@ -78,15 +78,15 @@ class DataModule(pl.LightningDataModule):
         def val_dataloader(self):
             print('using val dataloader')
             print(self.val_dataset.__len__())
-            return DataLoader(self.val_dataset,batch_size=self.batch_size,num_workers=2)
+            return DataLoader(self.val_dataset,batch_size=self.batch_size,num_workers=1)
         def predict_dataloader(self):
             print('using test dataloader')
             print(self.test_dataset.__len__())
-            return DataLoader(self.test_dataset,batch_size=self.batch_size,num_workers=2, shuffle=False)
+            return DataLoader(self.test_dataset,batch_size=self.batch_size,num_workers=1, shuffle=False)
         def test_dataloader(self):
             print('using test dataloader')
             print(self.test_dataset.__len__())
-            return DataLoader(self.test_dataset,batch_size=self.batch_size,num_workers=4, shuffle=False)
+            return DataLoader(self.test_dataset,batch_size=self.batch_size,num_workers=2, shuffle=False)
 
 class SentenceClassifier(pl.LightningModule):
 
@@ -290,7 +290,7 @@ def main():
         return flattened_predictions
     
     print('time to predict')
-    pred_labels = predict(model, data_module, checkpoint_path, data_module.predict_dataloader())
+    pred_labels = predict(model, data_module, checkpoint_path)
 
     # Converting to binary
     to_binary = {True: 1, False: 0}
