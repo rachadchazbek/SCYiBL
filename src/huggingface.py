@@ -74,19 +74,19 @@ class DataModule(pl.LightningDataModule):
         def train_dataloader(self):
             print('using train dataloader')
             print(self.train_dataset.__len__())
-            return DataLoader(self.train_dataset,batch_size=self.batch_size,num_workers=2,shuffle=False)
+            return DataLoader(self.train_dataset,batch_size=self.batch_size,num_workers=4,shuffle=False)
         def val_dataloader(self):
             print('using val dataloader')
             print(self.val_dataset.__len__())
-            return DataLoader(self.val_dataset,batch_size=self.batch_size,num_workers=1)
-        # def predict_dataloader(self):
-        #     print('using test dataloader')
-        #     print(self.test_dataset.__len__())
-        #     return DataLoader(self.test_dataset,batch_size=self.batch_size,num_workers=2, shuffle=False)
-        def test_dataloader(self):
+            return DataLoader(self.val_dataset,batch_size=self.batch_size,num_workers=4)
+        def predict_dataloader(self):
             print('using test dataloader')
             print(self.test_dataset.__len__())
             return DataLoader(self.test_dataset,batch_size=self.batch_size,num_workers=2, shuffle=False)
+        def test_dataloader(self):
+            print('using test dataloader')
+            print(self.test_dataset.__len__())
+            return DataLoader(self.test_dataset,batch_size=self.batch_size,num_workers=4, shuffle=False)
 
 class SentenceClassifier(pl.LightningModule):
 
@@ -97,22 +97,22 @@ class SentenceClassifier(pl.LightningModule):
         self.bert = DistilBertModel.from_pretrained(model_name, return_dict = True)
         # classifier and pre-classifier layers -------
         if self.config['pre_classifier'] is not None:
-            self.pre_classifier = torch.nn.Linear(self.bert.config.hidden_size, 64)
-            self.classifier = torch.nn.Linear(64, self.config['n_classes'])
-            torch.nn.init.xavier_uniform_(self.pre_classifier.weight)
-            torch.nn.init.xavier_uniform_(self.classifier.weight)
+            self.pre_classifier = nn.Linear(self.bert.config.hidden_size, 64)
+            self.classifier = nn.Linear(64, self.config['n_classes'])
+            nn.init.xavier_uniform_(self.pre_classifier.weight)
+            nn.init.xavier_uniform_(self.classifier.weight)
         else:
-            self.classifier = torch.nn.Linear(self.bert.config.hidden_size, self.config['n_classes'])
-            torch.nn.init.xavier_uniform_(self.classifier.weight)
+            self.classifier = nn.Linear(self.bert.config.hidden_size, self.config['n_classes'])
+            nn.init.xavier_uniform_(self.classifier.weight)
         # drop outs -------
         if self.config['dropout']:
             self.dropout = torch.nn.Dropout(0.2)
         # loss functions --------
         if self.config['class_weight'] is not None:
-            self.loss_fct = nn.BCEWithLogitsLoss(pos_weight=self.config['class_weight'], reduction='none')
+            self.loss_fct = nn.BCEWithLogitsLoss(pos_weight=self.config['class_weight'], reduction='mean')
         else:
             print('no class weight')
-        self.loss_fct = nn.BCEWithLogitsLoss(reduction='none')
+        self.loss_fct = nn.BCEWithLogitsLoss(reduction='mean')
 
 
     def forward(self, input_ids, attention_mask, sample_weights=None, labels=None):
@@ -125,6 +125,10 @@ class SentenceClassifier(pl.LightningModule):
         elif self.config['pool_method'] == 'mean':
             pooled_output = torch.mean(output.last_hidden_state,1)
 
+        # drop out
+        if self.config['dropout']:
+            pooled_output = self.dropout(pooled_output)
+
         # tahn or relu
         if self.config['pre_classifier'] is not None:
             pooled_output = self.pre_classifier(pooled_output)
@@ -132,10 +136,6 @@ class SentenceClassifier(pl.LightningModule):
             pooled_output = torch.tanh(pooled_output)
         else:
             pooled_output = torch.relu(pooled_output)
-
-        # drop out
-        if self.config['dropout']:
-            pooled_output = self.dropout(pooled_output)
 
         # final logits
         logits = self.classifier(pooled_output)
@@ -152,18 +152,13 @@ class SentenceClassifier(pl.LightningModule):
 
     def training_step(self, batch, batch_index):
         loss, outputs = self(**batch)
-        preds = self.forward(loss)
-        print('preds',preds)
         self.log("train loss", loss, prog_bar = True, logger = True)
         return {"loss": loss, "predictions": outputs, "labels": batch["labels"]}
 
     def validation_step(self, batch, batch_index):
-        input_ids = batch["input_ids"]
-        attention_mask = batch["attention_mask"]
-        labels = batch["labels"]
-        loss, outputs = self(input_ids, attention_mask, labels)
-        self.log("val loss", loss, prog_bar = True, logger = True)
-        return {"val_loss": loss, "predictions":outputs, "labels": labels}
+        loss, outputs = self(**batch)
+        self.log("validation loss", loss, prog_bar = True, logger = True)
+        return {"val loss": loss, "predictions": outputs, "labels": batch["labels"]}
 
     def test_step(self, batch, batch_index):
         input_ids = batch["input_ids"]
@@ -172,10 +167,17 @@ class SentenceClassifier(pl.LightningModule):
         loss, outputs = self(input_ids, attention_mask, labels)
         self.log("test_loss", loss, prog_bar=True, logger=True)
         return loss
+    
+    def predict_step(self, batch, batch_index):
+        _, logits = self(**batch)
+        return logits
 
     def training_epoch_end(self, outputs):
         labels,predictions, roc =[],[],[]
         # voir les données sur lesquels le model s'entraine
+
+        # calculating average loss
+        #avg_loss = torch.stack([x['loss'] for x in outputs]).mean()
 
         for output in outputs:
             for output_labels in output['labels'].detach().cpu():
@@ -250,7 +252,7 @@ def main():
         "lr": 1e-5,
         "batch_size": 32,
         "max_token_len": 128,
-        "n_epochs": 3,
+        "n_epochs": 2,
         "weight_decay":0.01,
         "n_classes":n_categories,
         "warmup":0.3,
@@ -267,54 +269,42 @@ def main():
     print('model loading')
     model = SentenceClassifier(config)
     print('trainer')
-    trainer = pl.Trainer(max_epochs=config['n_epochs'], num_sanity_val_steps=10, logger=True)
+    trainer = pl.Trainer(max_epochs=config['n_epochs'], num_sanity_val_steps=10, log_every_n_steps=10, logger=True)
     checkpoint_path = 'output/preTrainedModel.ckpt'
     print('trainer fit')
     trainer.fit(model, data_module) #ckpt_path=checkpoint_path
     trainer.save_checkpoint(checkpoint_path)
-    print("***trainer test***")
-    trainer.test(model, data_module.test_dataloader())
+    #print("***trainer test***")
+    # trainer.test(model, data_module.test_dataloader())
     print("***trainer validate***")
     trainer.validate(model, data_module.val_dataloader())
 
     # true labels 
     true_labels = np.array(data_test[categories])
 
-    # # pred labels 
-    # def predict(m, dm, ckpt_path, dataloader):
-    #     predictions = trainer.predict(m, dm, ckpt_path, dataloader)
-    #     flattened_predictions = [p>0.5 for batch in predictions for p in batch]
-    #     flattened_predictions = np.stack(flattened_predictions)
-    #     return flattened_predictions
+    # pred labels 
+    def predict(m, dm, ckpt_path):
+        predictions = trainer.predict(m, dm, ckpt_path)
+        flattened_predictions = [torch.sigmoid(torch.Tensor(p)) for batch in predictions for p in batch]
+        flattened_predictions = np.stack(flattened_predictions)
+        return flattened_predictions
     
-    # print('time to predict')
-    # pred_labels = predict(model, data_module, checkpoint_path, data_module.predict_dataloader())
+    print('time to predict')
+    pred_labels = predict(model, data_module, checkpoint_path, data_module.predict_dataloader())
 
-    # # Converting to binary
-    # to_binary = {True: 1, False: 0}
-    # pred_labels = np.vectorize(to_binary.get)(pred_labels)
-    # true_labels = np.vectorize(to_binary.get)(true_labels)
-    # fpr = dict()
-    # tpr = dict()
-    # auc = dict()
-    # for i in range(n_categories):
-    #     fpr[i], tpr[i], _ = metrics.roc_curve(true_labels[:,i], pred_labels[:,i])
-    #     auc[i] = metrics.roc_auc_score(true_labels[:,i], pred_labels[:, i])
-    #     # roc_auc_score = evaluate.load("roc_auc")
-    #     # auc[i] = roc_auc_score.compute(references=true_labels[:,i], prediction_scores= pred_labels[:, i])
-
-    #     # precision = evaluate.load("precision")
-    #     # accuracy[i] = precision.compute(references=true_labels[:,i], prediction_scores= pred_labels[:, i])
-
-    #     # recall = evaluate.load("recall")
-    #     # tpr[i] = recall.compute(references=true_labels[:,i], prediction_scores= pred_labels[:, i])
-    #     plt.plot(fpr[i], tpr[i], lw=2, label=f'{categories[i]}, {auc[i]}')
-    # plt.xlabel('False Positive Rate')
-    # plt.ylabel('True Positive Rate')
-    # plt.legend(loc="best")
-    # plt.title('ROC curve') 
-    # plt.show()
-    # # ADD SOME METRICS 
+    # Converting to binary
+    to_binary = {True: 1, False: 0}
+    pred_labels = np.vectorize(to_binary.get)(pred_labels)
+    true_labels = np.vectorize(to_binary.get)(true_labels)
+    for i, categorie in range(n_categories):
+        fpr, tpr, _ = metrics.roc_curve(true_labels[:,i], pred_labels[:,i])
+        auc = metrics.roc_auc_score(true_labels[:,i], pred_labels[:, i])
+        plt.plot(fpr, tpr, lw=2, label='%s %g' % (categorie, auc))
+    plt.xlabel('False Positive Rate')
+    plt.ylabel('True Positive Rate')
+    plt.legend(loc="best")
+    plt.title('ROC curve') 
+    plt.show()
 
 if __name__ == '__main__':
     freeze_support()
