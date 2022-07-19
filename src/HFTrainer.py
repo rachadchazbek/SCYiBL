@@ -89,8 +89,9 @@ def main():
     # Split dataset: train 80, test 20 + shuffle 
     def split_data(data_path):
         data = load_dataset("pandas", data_files=data_path)
+        data = data.remove_columns(column_names=['index'])
         print("DATA: ", data)
-        # data = data.drop(columns=['index'])
+
         x_train, x_testAndVal = train_test_split(data, test_size=0.2, shuffle=True)
         x_test, x_val = train_test_split(x_testAndVal, test_size=0.66,shuffle=True)
         return x_train, x_test, x_val
