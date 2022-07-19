@@ -74,11 +74,11 @@ class DataModule(pl.LightningDataModule):
         def train_dataloader(self):
             print('using train dataloader')
             print(self.train_dataset.__len__())
-            return DataLoader(self.train_dataset,batch_size=self.batch_size,num_workers=4,shuffle=False)
+            return DataLoader(self.train_dataset,batch_size=self.batch_size,num_workers=2,shuffle=False)
         def val_dataloader(self):
             print('using val dataloader')
             print(self.val_dataset.__len__())
-            return DataLoader(self.val_dataset,batch_size=self.batch_size,num_workers=4)
+            return DataLoader(self.val_dataset,batch_size=self.batch_size,num_workers=2)
         def predict_dataloader(self):
             print('using test dataloader')
             print(self.test_dataset.__len__())
