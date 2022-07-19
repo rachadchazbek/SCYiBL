@@ -4,7 +4,6 @@ import torch
 import math
 import torch.nn as nn
 from torch.nn import BCEWithLogitsLoss
-from torch.utils.tensorboard import SummaryWriter
 import torch.nn.functional as F
 from torchmetrics.functional.classification import auroc
 from sklearn.model_selection import train_test_split

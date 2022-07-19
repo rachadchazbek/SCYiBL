@@ -3,6 +3,7 @@ from regex import R
 import torch
 import math
 import torch.nn as nn
+from torch.utils.tensorboard import SummaryWriter
 from torch.nn import BCEWithLogitsLoss
 import torch.nn.functional as F
 from torchmetrics.functional.classification import auroc
@@ -242,7 +243,7 @@ def main():
         "lr": 1e-5,
         "batch_size": 32,
         "max_token_len": 128,
-        "n_epochs": 4,
+        "n_epochs": 2,
         "weight_decay":0.01,
         "n_classes":n_categories,
         "warmup":0.3,
