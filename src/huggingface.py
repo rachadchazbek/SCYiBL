@@ -79,7 +79,11 @@ class DataModule(pl.LightningDataModule):
             print('using val dataloader')
             print(self.val_dataset.__len__())
             return DataLoader(self.val_dataset,batch_size=self.batch_size,num_workers=1)
-        def predict_dataloader(self):
+        # def predict_dataloader(self):
+        #     print('using test dataloader')
+        #     print(self.test_dataset.__len__())
+        #     return DataLoader(self.test_dataset,batch_size=self.batch_size,num_workers=2, shuffle=False)
+        def test_dataloader(self):
             print('using test dataloader')
             print(self.test_dataset.__len__())
             return DataLoader(self.test_dataset,batch_size=self.batch_size,num_workers=2, shuffle=False)
@@ -148,6 +152,8 @@ class SentenceClassifier(pl.LightningModule):
 
     def training_step(self, batch, batch_index):
         loss, outputs = self(**batch)
+        preds = self.forward(loss)
+        print('preds',preds)
         self.log("train loss", loss, prog_bar = True, logger = True)
         return {"loss": loss, "predictions": outputs, "labels": batch["labels"]}
 
@@ -159,12 +165,13 @@ class SentenceClassifier(pl.LightningModule):
         self.log("val loss", loss, prog_bar = True, logger = True)
         return {"val_loss": loss, "predictions":outputs, "labels": labels}
 
-    def predict_step(self, batch, batch_index):
+    def test_step(self, batch, batch_index):
         input_ids = batch["input_ids"]
         attention_mask = batch["attention_mask"]
         labels = batch["labels"]
         loss, outputs = self(input_ids, attention_mask, labels)
-        return labels
+        self.log("test_loss", loss, prog_bar=True, logger=True)
+        return loss
 
     def training_epoch_end(self, outputs):
         labels,predictions, roc =[],[],[]
@@ -243,7 +250,7 @@ def main():
         "lr": 1e-5,
         "batch_size": 32,
         "max_token_len": 128,
-        "n_epochs": 2,
+        "n_epochs": 3,
         "weight_decay":0.01,
         "n_classes":n_categories,
         "warmup":0.3,
@@ -260,7 +267,7 @@ def main():
     print('model loading')
     model = SentenceClassifier(config)
     print('trainer')
-    trainer = pl.Trainer(max_epochs=config['n_epochs'], num_sanity_val_steps=50)
+    trainer = pl.Trainer(max_epochs=config['n_epochs'], num_sanity_val_steps=10, logger=True)
     checkpoint_path = 'output/preTrainedModel.ckpt'
     print('trainer fit')
     trainer.fit(model, data_module) #ckpt_path=checkpoint_path
