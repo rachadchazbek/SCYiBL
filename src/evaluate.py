@@ -4,6 +4,7 @@ import torch
 import math
 import torch.nn as nn
 from torch.nn import BCEWithLogitsLoss
+from torch.utils.tensorboard import SummaryWriter
 import torch.nn.functional as F
 from torchmetrics.functional.classification import auroc
 from sklearn.model_selection import train_test_split
@@ -78,10 +79,10 @@ class DataModule(pl.LightningDataModule):
             print('using val dataloader')
             print(self.val_dataset.__len__())
             return DataLoader(self.val_dataset,batch_size=self.batch_size,num_workers=1)
-        def predict_dataloader(self):
-            print('using test dataloader')
-            print(self.test_dataset.__len__())
-            return DataLoader(self.test_dataset,batch_size=self.batch_size,num_workers=2, shuffle=False)
+        # def predict_dataloader(self):
+        #     print('using test dataloader')
+        #     print(self.test_dataset.__len__())
+        #     return DataLoader(self.test_dataset,batch_size=self.batch_size,num_workers=2, shuffle=False)
         def test_dataloader(self):
             print('using test dataloader')
             print(self.test_dataset.__len__())
@@ -112,7 +113,6 @@ class SentenceClassifier(pl.LightningModule):
         else:
             print('no class weight')
         self.loss_fct = nn.BCEWithLogitsLoss(reduction='none')
-
 
     def forward(self, input_ids, attention_mask, sample_weights=None, labels=None):
         # distillBert layer
@@ -199,7 +199,6 @@ class SentenceClassifier(pl.LightningModule):
 
     def validation_epoch_end(self, outputs):
         labels,predictions,roc =[],[],[]
-        fpr, tpr, auc = [],[],[]
         
         for output in outputs:
             for output_labels in output['labels'].detach().cpu():
@@ -211,17 +210,9 @@ class SentenceClassifier(pl.LightningModule):
         predictions = torch.sigmoid(torch.stack(predictions))
 
         for i, categorie in enumerate(categories):
-            fpr[i], tpr[i], _ = metrics.roc_curve(labels[:,i], predictions[:,i])
-            auc[i] = metrics.roc_auc_score(labels[:,i], predictions[:, i])
             roc_score = auroc(predictions[:, i], labels[:, i].int())
             roc.append(roc_score)
             self.logger.experiment.add_scalar(f"Validation/{categorie}_roc_auc", roc_score, self.current_epoch)
-            plt.plot(fpr[i], tpr[i], lw=2, label=f'{categories[i]}, {auc[i]}')
-        plt.xlabel('False Positive Rate')
-        plt.ylabel('True Positive Rate')
-        plt.legend(loc="best")
-        plt.title('ROC curve') 
-        plt.show()
         self.log("ptl/val_avg_roc", np.mean(roc))
 
     def configure_optimizers(self):
@@ -285,8 +276,8 @@ def main():
     print('trainer fit')
     trainer.fit(model, data_module, ckpt_path=checkpoint_path)
     trainer.save_checkpoint(checkpoint_path) 
-    # print("***trainer test***")
-    # trainer.test(model, data_module.test_dataloader())
+    print("***trainer test***")
+    trainer.test(model, data_module.test_dataloader())
     print("***trainer validate***")
     trainer.validate(model, data_module.val_dataloader())
 
