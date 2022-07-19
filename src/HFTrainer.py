@@ -1,12 +1,11 @@
 from multiprocessing import freeze_support
+from datasets import load_dataset
 from regex import R
 import torch
-import torch.nn.functional as F
 from torchmetrics.functional.classification import auroc
 from sklearn.model_selection import train_test_split
 import numpy as np
 import pytorch_lightning as pl
-import seaborn as sns
 from transformers import DataCollatorWithPadding, DistilBertModel, AdamW, DistilBertTokenizer, Trainer, TrainingArguments
 from sklearn.model_selection import train_test_split
 from sklearn import metrics
@@ -89,31 +88,20 @@ def main():
 
     # Split dataset: train 80, test 20 + shuffle 
     def split_data(data_path):
-        data = pd.read_pickle(data_path)
-        data = data.drop(columns=['index'])
+        data = load_dataset("pandas", data_files=data_path)
+        print("DATA: ", data)
+        # data = data.drop(columns=['index'])
         x_train, x_testAndVal = train_test_split(data, test_size=0.2, shuffle=True)
         x_test, x_val = train_test_split(x_testAndVal, test_size=0.66,shuffle=True)
         return x_train, x_test, x_val
 
     data_train, data_test, data_val = split_data("data/data_huggingface.pkl")
-    print('data train')
-    print(data_train)
-    print('data test')
-    print(data_test)
-    print('data val')
-    print(data_val)
 
     tokenizer = DistilBertTokenizer.from_pretrained(model_name)
     model = DistilBertModel.from_pretrained(model_name, return_dict=True)
 
-    print('data module')
     data_module = DataModule(data_train, data_test, data_val, tokenizer, batch_size=32)
-    print('data setup')
     data_module.setup()
- 
-    # Modeling
-    print('model loading')
-    print('trainer')
 
     training_args = TrainingArguments("test-trainer")
     data_collator = DataCollatorWithPadding(tokenizer=tokenizer)
