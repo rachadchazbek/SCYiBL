@@ -265,45 +265,49 @@ def main():
     print('trainer fit')
     trainer.fit(model, data_module) #ckpt_path=checkpoint_path
     trainer.save_checkpoint(checkpoint_path)
+    print("***trainer test***")
+    trainer.test(model, data_module.test_dataloader())
+    print("***trainer validate***")
+    trainer.validate(model, data_module.val_dataloader())
 
     # true labels 
     true_labels = np.array(data_test[categories])
 
-    # pred labels 
-    def predict(m, dm, ckpt_path, dataloader):
-        predictions = trainer.predict(m, dm, ckpt_path, dataloader)
-        flattened_predictions = [p>0.5 for batch in predictions for p in batch]
-        flattened_predictions = np.stack(flattened_predictions)
-        return flattened_predictions
+    # # pred labels 
+    # def predict(m, dm, ckpt_path, dataloader):
+    #     predictions = trainer.predict(m, dm, ckpt_path, dataloader)
+    #     flattened_predictions = [p>0.5 for batch in predictions for p in batch]
+    #     flattened_predictions = np.stack(flattened_predictions)
+    #     return flattened_predictions
     
-    print('time to predict')
-    pred_labels = predict(model, data_module, checkpoint_path, data_module.predict_dataloader())
+    # print('time to predict')
+    # pred_labels = predict(model, data_module, checkpoint_path, data_module.predict_dataloader())
 
-    # Converting to binary
-    to_binary = {True: 1, False: 0}
-    pred_labels = np.vectorize(to_binary.get)(pred_labels)
-    true_labels = np.vectorize(to_binary.get)(true_labels)
-    fpr = dict()
-    tpr = dict()
-    auc = dict()
-    for i in range(n_categories):
-        fpr[i], tpr[i], _ = metrics.roc_curve(true_labels[:,i], pred_labels[:,i])
-        auc[i] = metrics.roc_auc_score(true_labels[:,i], pred_labels[:, i])
-        # roc_auc_score = evaluate.load("roc_auc")
-        # auc[i] = roc_auc_score.compute(references=true_labels[:,i], prediction_scores= pred_labels[:, i])
+    # # Converting to binary
+    # to_binary = {True: 1, False: 0}
+    # pred_labels = np.vectorize(to_binary.get)(pred_labels)
+    # true_labels = np.vectorize(to_binary.get)(true_labels)
+    # fpr = dict()
+    # tpr = dict()
+    # auc = dict()
+    # for i in range(n_categories):
+    #     fpr[i], tpr[i], _ = metrics.roc_curve(true_labels[:,i], pred_labels[:,i])
+    #     auc[i] = metrics.roc_auc_score(true_labels[:,i], pred_labels[:, i])
+    #     # roc_auc_score = evaluate.load("roc_auc")
+    #     # auc[i] = roc_auc_score.compute(references=true_labels[:,i], prediction_scores= pred_labels[:, i])
 
-        # precision = evaluate.load("precision")
-        # accuracy[i] = precision.compute(references=true_labels[:,i], prediction_scores= pred_labels[:, i])
+    #     # precision = evaluate.load("precision")
+    #     # accuracy[i] = precision.compute(references=true_labels[:,i], prediction_scores= pred_labels[:, i])
 
-        # recall = evaluate.load("recall")
-        # tpr[i] = recall.compute(references=true_labels[:,i], prediction_scores= pred_labels[:, i])
-        plt.plot(fpr[i], tpr[i], lw=2, label=f'{categories[i]}, {auc[i]}')
-    plt.xlabel('False Positive Rate')
-    plt.ylabel('True Positive Rate')
-    plt.legend(loc="best")
-    plt.title('ROC curve') 
-    plt.show()
-    # ADD SOME METRICS 
+    #     # recall = evaluate.load("recall")
+    #     # tpr[i] = recall.compute(references=true_labels[:,i], prediction_scores= pred_labels[:, i])
+    #     plt.plot(fpr[i], tpr[i], lw=2, label=f'{categories[i]}, {auc[i]}')
+    # plt.xlabel('False Positive Rate')
+    # plt.ylabel('True Positive Rate')
+    # plt.legend(loc="best")
+    # plt.title('ROC curve') 
+    # plt.show()
+    # # ADD SOME METRICS 
 
 if __name__ == '__main__':
     freeze_support()
