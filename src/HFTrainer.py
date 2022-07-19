@@ -1,19 +1,13 @@
 from multiprocessing import freeze_support
-from datasets import load_metric
+from datasets import load_dataset
 from regex import R
 import torch
-import math
-import torch.nn as nn
-from torch.nn import BCEWithLogitsLoss
-import torch.nn.functional as F
 from torchmetrics.functional.classification import auroc
 from sklearn.model_selection import train_test_split
 import numpy as np
 import pytorch_lightning as pl
-import seaborn as sns
-from transformers import DataCollatorWithPadding, DistilBertModel, AdamW, DistilBertTokenizer, Trainer, TrainingArguments, get_linear_schedule_with_warmup
+from transformers import DataCollatorWithPadding, DistilBertModel, AdamW, DistilBertTokenizer, Trainer, TrainingArguments
 from sklearn.model_selection import train_test_split
-import evaluate 
 from sklearn import metrics
 import pandas as pd 
 import matplotlib.pyplot as plt
@@ -88,193 +82,27 @@ class DataModule(pl.LightningDataModule):
             print(self.test_dataset.__len__())
             return DataLoader(self.test_dataset,batch_size=self.batch_size,num_workers=2, shuffle=False)
 
-class SentenceClassifier(pl.LightningModule):
-
-    def __init__(self, config: dict):
-        super().__init__()
-        self.config = config
-        # distilBert Layer
-        self.bert = DistilBertModel.from_pretrained(model_name, return_dict = True)
-        # classifier and pre-classifier layers -------
-        if self.config['pre_classifier'] is not None:
-            self.pre_classifier = torch.nn.Linear(self.bert.config.hidden_size, 64)
-            self.classifier = torch.nn.Linear(64, self.config['n_classes'])
-            torch.nn.init.xavier_uniform_(self.pre_classifier.weight)
-            torch.nn.init.xavier_uniform_(self.classifier.weight)
-        else:
-            self.classifier = torch.nn.Linear(self.bert.config.hidden_size, self.config['n_classes'])
-            torch.nn.init.xavier_uniform_(self.classifier.weight)
-        # drop outs -------
-        if self.config['dropout']:
-            self.dropout = torch.nn.Dropout(0.2)
-        # loss functions --------
-        if self.config['class_weight'] is not None:
-            self.loss_fct = nn.BCEWithLogitsLoss(pos_weight=self.config['class_weight'], reduction='none')
-        else:
-            print('no class weight')
-        self.loss_fct = nn.BCEWithLogitsLoss(reduction='none')
-
-
-    def forward(self, input_ids, attention_mask, sample_weights=None, labels=None):
-        # distillBert layer
-        output = self.bert(input_ids=input_ids, attention_mask=attention_mask)
-
-        # roberta output method
-        if self.config['pool_method'] == 'pooler':
-            pooled_output = output.pooler_output
-        elif self.config['pool_method'] == 'mean':
-            pooled_output = torch.mean(output.last_hidden_state,1)
-
-        # tahn or relu
-        if self.config['pre_classifier'] is not None:
-            pooled_output = self.pre_classifier(pooled_output)
-        if self.config['pre_classifier'] == 'tanh':
-            pooled_output = torch.tanh(pooled_output)
-        else:
-            pooled_output = torch.relu(pooled_output)
-
-        # drop out
-        if self.config['dropout']:
-            pooled_output = self.dropout(pooled_output)
-
-        # final logits
-        logits = self.classifier(pooled_output)
-
-        # calculate loss
-        loss = 0
-        if labels is not None:
-            loss = self.loss_fct(logits.view(-1, self.config['n_classes']), labels.view(-1, self.config['n_classes']))
-            if self.config['sample_weight'] and sample_weights is not None:
-                loss = loss * sample_weights
-            loss = torch.mean(loss)
-        return loss, logits
-
-
-    def training_step(self, batch, batch_index):
-        loss, outputs = self(**batch)
-        self.log("train loss", loss, prog_bar = True, logger = True)
-        return {"loss": loss, "predictions": outputs, "labels": batch["labels"]}
-    
-    def test_step(self, batch, batch_idx):
-        input_ids = batch["input_ids"]
-        attention_mask = batch["attention_mask"]
-        labels = batch["labels"]
-        loss, outputs = self(input_ids, attention_mask, labels)
-        self.log("test_loss", loss, prog_bar=True, logger=True)
-        return loss
-
-    def validation_step(self, batch, batch_index):
-        input_ids = batch["input_ids"]
-        attention_mask = batch["attention_mask"]
-        labels = batch["labels"]
-        loss, outputs = self(input_ids, attention_mask, labels)
-        self.log("val loss", loss, prog_bar = True, logger = True)
-        return {"val_loss": loss, "predictions":outputs, "labels": labels}
-
-    # def predict_step(self, batch, batch_index):
-    #     input_ids = batch["input_ids"]
-    #     attention_mask = batch["attention_mask"]
-    #     labels = batch["labels"]
-    #     loss, outputs = self(input_ids, attention_mask, labels)
-    #     return labels
-
-    def training_epoch_end(self, outputs):
-        labels,predictions, roc =[],[],[]
-        # voir les données sur lesquels le model s'entraine
-
-        for output in outputs:
-            for output_labels in output['labels'].detach().cpu():
-                labels.append(output_labels)
-
-            for output_preds in output['predictions'].detach().cpu():
-                predictions.append(output_preds)
-                
-        labels = torch.stack(labels).int()
-        predictions = torch.sigmoid(torch.stack(predictions))
-
-        for i, categorie in enumerate(categories):
-            roc_score = auroc(predictions[:, i], labels[:, i].int())
-            roc.append(roc_score)
-            self.logger.experiment.add_scalar(f"Train/{categorie}_roc_auc", roc_score, self.current_epoch)
-        self.log("ptl/train_avg_roc", np.mean(roc))
-
-    def validation_epoch_end(self, outputs):
-        labels,predictions,roc =[],[],[]
-        
-        for output in outputs:
-            for output_labels in output['labels'].detach().cpu():
-                labels.append(output_labels)
-            for output_preds in output['predictions'].detach().cpu():
-                predictions.append(output_preds)
-
-        print("Labels", labels[0], len(labels))
-        labels = torch.stack(labels)
-
-        predictions = torch.sigmoid(torch.stack(predictions))
-        print("Predictions", predictions[0], len(predictions))
-
-        for i, categorie in enumerate(categories):
-            roc_score = auroc(predictions[:, i], labels[:, i].int())
-            roc.append(roc_score)
-            self.logger.experiment.add_scalar(f"Validation/{categorie}_roc_auc", roc_score, self.current_epoch)
-        self.log("ptl/val_avg_roc", np.mean(roc))
-
-    def configure_optimizers(self):
-        optimizer = AdamW(self.parameters(), lr=self.config['lr'], weight_decay=self.config['weight_decay'])
-        total_steps = self.config['train_size']/self.config['batch_size']
-        warmup_steps = math.floor(total_steps * self.config['warmup'])
-        scheduler = get_linear_schedule_with_warmup(optimizer, warmup_steps, total_steps)
-        return [optimizer],[scheduler]
-
 def main(): 
     categories = ['CP', 'Constructivism', 'Coping', 'ED', 'ER/SR', 'Empowerment', 'Exposure/Habit', 'PERMA']
     n_categories = len(categories)
 
     # Split dataset: train 80, test 20 + shuffle 
     def split_data(data_path):
-        data = pd.read_pickle(data_path)
-        data = data.drop(columns=['index'])
+        data = load_dataset("pandas", data_files=data_path)
+        data = data.remove_columns(column_names=['index'])
+        print("DATA: ", data)
+
         x_train, x_testAndVal = train_test_split(data, test_size=0.2, shuffle=True)
         x_test, x_val = train_test_split(x_testAndVal, test_size=0.66,shuffle=True)
         return x_train, x_test, x_val
 
     data_train, data_test, data_val = split_data("data/data_huggingface.pkl")
-    print('data train')
-    print(data_train)
-    print('data test')
-    print(data_test)
-    print('data val')
-    print(data_val)
 
     tokenizer = DistilBertTokenizer.from_pretrained(model_name)
-    #model = DistilBertModel.from_pretrained(model_name, return_dict=True)
+    model = DistilBertModel.from_pretrained(model_name, return_dict=True)
 
-    print('data module')
     data_module = DataModule(data_train, data_test, data_val, tokenizer, batch_size=32)
-    print('data setup')
     data_module.setup()
-    
-    config = {
-        "lr": 1e-5,
-        "batch_size": 8,
-        "max_token_len": 128,
-        "n_epochs": 4,
-        "weight_decay":0.01,
-        "n_classes":n_categories,
-        "warmup":0.3,
-        "dropout":True,
-        "train_size": len(data_module.train_dataloader()),
-        "pre_classifier":'relu',
-        "pool_method":'mean',
-        "class_weight":None,
-        'sample_weight': None,
-        "optim":'sgd'
-    }
-
-    # Modeling
-    print('model loading')
-    model = SentenceClassifier(config)
-    print('trainer')
 
     training_args = TrainingArguments("test-trainer")
     data_collator = DataCollatorWithPadding(tokenizer=tokenizer)
