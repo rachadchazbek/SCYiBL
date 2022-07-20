@@ -295,8 +295,6 @@ def main():
     print('labels outside loop')
     print(true_labels[:,0])
     print(pred_labels[:,0])
-    print('pred labels with rounding')
-    print(pred_labels[:, i].round())
 
 
     for i, categorie in enumerate(categories):
@@ -308,8 +306,11 @@ def main():
         auc = metrics.roc_auc_score(true_labels[:,i], pred_labels[:, i])
         plt.plot(fpr, tpr, lw=2, label='%s %g' % (categorie, auc))
         
-        # accuracy = metrics.accuracy_score(true_labels[:,i], pred_labels[:, i].round(), normalize=True)
-        # print('%s accuracy : ' % (categorie), accuracy)
+        accuracy = metrics.accuracy_score(true_labels[:,i], pred_labels[:, i].round(), normalize=True)
+        print('%s accuracy : ' % (categorie), accuracy)
+    # show other metrics
+    y_pred = pred_labels.round().astype(int)
+    print(metrics.classification_report(true_labels, y_pred,target_names=categories))
 
     plt.xlabel('False Positive Rate')
     plt.ylabel('True Positive Rate')
