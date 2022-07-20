@@ -309,7 +309,7 @@ def main():
         auc = metrics.roc_auc_score(true_labels[:,i], pred_labels[:, i])
         plt.plot(fpr, tpr, lw=2, label='%s %g' % (categorie, auc))
         
-        accuracy = metrics.accuracy_score(true_labels[:,i], pred_labels[:, i], normalize=True)
+        accuracy = metrics.accuracy_score(true_labels[:,i], pred_labels[:, i].round(), normalize=True)
         print('%s accuracy : ' % (categorie), accuracy)
 
     plt.xlabel('False Positive Rate')
