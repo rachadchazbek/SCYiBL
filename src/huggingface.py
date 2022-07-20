@@ -285,16 +285,15 @@ def main():
     # pred labels 
     def predict(m, dm, ckpt_path):
         predictions = trainer.predict(m, dm, ckpt_path)
-        flattened_predictions = [p>0.5 for batch in predictions for p in batch] ##
-        flattened_predictions = np.stack(flattened_predictions)
+        flattened_predictions = np.stack([torch.sigmoid(torch.Tensor(p)) for batch in predictions for p in batch])
         return flattened_predictions
     
     print('time to predict')
     pred_labels = predict(model, data_module, checkpoint_path)
 
     # Converting to binary
-    to_binary = {True: 1, False: 0}
-    pred_labels = np.vectorize(to_binary.get)(pred_labels)
+    #to_binary = {True: 1, False: 0}
+    #pred_labels = np.vectorize(to_binary.get)(pred_labels)
     print('labels outside loop')
     print(true_labels[:,0])
     print(pred_labels[:,0])
