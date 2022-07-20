@@ -292,14 +292,10 @@ def main():
     print('time to predict')
     pred_labels = predict(model, data_module, checkpoint_path)
 
-    # Converting to binary
-    #to_binary = {True: 1, False: 0}
-    #pred_labels = np.vectorize(to_binary.get)(pred_labels)
     print('labels outside loop')
     print(true_labels[:,0])
     print(pred_labels[:,0])
 
-    #true_labels = np.vectorize(to_binary.get)(true_labels)
     for i, categorie in enumerate(categories):
         print('%s true labels in loop' % (categorie))
         print(true_labels[:,i])
