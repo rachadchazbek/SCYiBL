@@ -272,7 +272,7 @@ def main():
     trainer = pl.Trainer(max_epochs=config['n_epochs'], num_sanity_val_steps=10, log_every_n_steps=10, logger=True)
     checkpoint_path = 'output/preTrainedModel.ckpt'
     print('trainer fit')
-    trainer.fit(model, data_module) #ckpt_path=checkpoint_path
+    trainer.fit(model, data_module,ckpt_path=checkpoint_path) #ckpt_path=checkpoint_path
     trainer.save_checkpoint(checkpoint_path)
     #print("***trainer test***")
     # trainer.test(model, data_module.test_dataloader())
@@ -285,7 +285,7 @@ def main():
     # pred labels 
     def predict(m, dm, ckpt_path):
         predictions = trainer.predict(m, dm, ckpt_path)
-        flattened_predictions = [torch.sigmoid(torch.Tensor(p)) for batch in predictions for p in batch]
+        flattened_predictions = [p>0.5 for batch in predictions for p in batch] ##
         flattened_predictions = np.stack(flattened_predictions)
         return flattened_predictions
     
@@ -295,8 +295,16 @@ def main():
     # Converting to binary
     to_binary = {True: 1, False: 0}
     pred_labels = np.vectorize(to_binary.get)(pred_labels)
-    true_labels = np.vectorize(to_binary.get)(true_labels)
-    for i, categorie in range(n_categories):
+    print('labels outside loop')
+    print(true_labels[:,0])
+    print(pred_labels[:,0])
+
+    #true_labels = np.vectorize(to_binary.get)(true_labels)
+    for i, categorie in enumerate(categories):
+        print('%s true labels in loop' % (categorie))
+        print(true_labels[:,i])
+        print('%s pred labels in loop' % (categorie))
+        print(pred_labels[:,i])
         fpr, tpr, _ = metrics.roc_curve(true_labels[:,i], pred_labels[:,i])
         auc = metrics.roc_auc_score(true_labels[:,i], pred_labels[:, i])
         plt.plot(fpr, tpr, lw=2, label='%s %g' % (categorie, auc))
