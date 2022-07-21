@@ -14,6 +14,7 @@ import pytorch_lightning as pl
 import seaborn as sns
 from transformers import DistilBertModel, AdamW, DistilBertTokenizer, get_linear_schedule_with_warmup
 from sklearn.model_selection import train_test_split
+from classWeightTest import createPositiveWeights
 import evaluate 
 from sklearn import metrics
 import pandas as pd 
@@ -110,10 +111,10 @@ class SentenceClassifier(pl.LightningModule):
             self.dropout = torch.nn.Dropout(0.2)
         # loss functions --------
         if self.config['class_weight'] is not None:
-            self.loss_fct = nn.BCEWithLogitsLoss(pos_weight=self.config['class_weight'], reduction='mean')
+            self.loss_fct = nn.BCEWithLogitsLoss(pos_weight=torch.Tensor(self.config['class_weight']), reduction='none')
         else:
             print('no class weight')
-        self.loss_fct = nn.BCEWithLogitsLoss(reduction='mean')
+            self.loss_fct = nn.BCEWithLogitsLoss(reduction='none')
 
 
     def forward(self, input_ids, attention_mask, sample_weights=None, labels=None):
@@ -232,6 +233,24 @@ def main():
         x_train, x_testAndVal = train_test_split(data, test_size=0.2, shuffle=True)
         x_test, x_val = train_test_split(x_testAndVal, test_size=0.33,shuffle=True)
         return x_train, x_test, x_val
+    
+    def createPositiveWeights(data_path):
+        df = pd.read_pickle(data_path)
+        categories = ['CP', 'Constructivism', 'Coping', 'ED', 'ER/SR', 'Empowerment', 'Exposure/Habit', 'PERMA']
+        labels = df[categories]
+        pos = []
+        neg = []
+        N = len(df)
+        for k, label in enumerate(labels):
+            pos.append(sum(df[label] == 1))
+            neg.append(N - pos[k])
+        neg_pos_ratio = []
+
+        for i in range(len(pos)):
+            ratio = neg[i]/pos[i]
+            neg_pos_ratio.append(ratio)
+
+        return neg_pos_ratio
 
     data_train, data_test, data_val = split_data("data/data_huggingface.pkl")
     print('data train')
@@ -260,8 +279,8 @@ def main():
         "train_size": len(data_module.train_dataloader()),
         "pre_classifier":'relu',
         "pool_method":'mean',
-        "class_weight":None,
-        'sample_weight': None,
+        "class_weight": createPositiveWeights("data/data_huggingface.pkl"),
+        'sample_weight': True,
         "optim":'sgd'
     }
 
@@ -272,7 +291,7 @@ def main():
     trainer = pl.Trainer(max_epochs=config['n_epochs'], num_sanity_val_steps=10, log_every_n_steps=10, logger=True)
     checkpoint_path = 'output/preTrainedModel.ckpt'
     print('trainer fit')
-    trainer.fit(model, data_module,ckpt_path=checkpoint_path) #ckpt_path=checkpoint_path
+    trainer.fit(model, data_module) #ckpt_path=checkpoint_path
     trainer.save_checkpoint(checkpoint_path)
     #print("***trainer test***")
     # trainer.test(model, data_module.test_dataloader())
@@ -283,13 +302,13 @@ def main():
     true_labels = np.array(data_test[categories])
 
     # pred labels 
-    def predict(m, dm, ckpt_path):
-        predictions = trainer.predict(m, dm, ckpt_path)
+    def predict(m, dm):
+        predictions = trainer.predict(m, dm)
         flattened_predictions = np.stack([torch.sigmoid(torch.Tensor(p)) for batch in predictions for p in batch])
         return flattened_predictions
     
     print('time to predict')
-    pred_labels = predict(model, data_module, checkpoint_path)
+    pred_labels = predict(model, data_module)
         
     print('labels outside loop')
     print(true_labels[:,0])

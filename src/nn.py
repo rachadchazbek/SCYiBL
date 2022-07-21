@@ -175,8 +175,8 @@ X_test = pad_sequences(testSentences, padding='post', truncating='post', maxlen=
 #    pickle.dump(embeddingMatrix, file)
 
 # Use next 2 lines to load pre-existing embedded Matrices (present in output repository)
-with open('output/fastTextEmbMatrix.pkl', 'rb') as embMatrixFile:
-    embeddingMatrix = pickle.load(embMatrixFile)
+# with open('output/fastTextEmbMatrix.pkl', 'rb') as embMatrixFile:
+#     embeddingMatrix = pickle.load(embMatrixFile)
 
 # Word embedding w/ our vocabulary
 #embeddingMatrix = Word2Vec(sentences, vector_size=embedding_dim, min_count=1, sg=1)
