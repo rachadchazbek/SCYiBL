@@ -230,7 +230,7 @@ def main():
         data = pd.read_pickle(data_path)
         data = data.drop(columns=['index'])
         x_train, x_testAndVal = train_test_split(data, test_size=0.2, shuffle=True)
-        x_test, x_val = train_test_split(x_testAndVal, test_size=0.66,shuffle=True)
+        x_test, x_val = train_test_split(x_testAndVal, test_size=0.33,shuffle=True)
         return x_train, x_test, x_val
 
     data_train, data_test, data_val = split_data("data/data_huggingface.pkl")
@@ -242,7 +242,6 @@ def main():
     print(data_val)
 
     tokenizer = DistilBertTokenizer.from_pretrained(model_name)
-    #model = DistilBertModel.from_pretrained(model_name, return_dict=True)
 
     print('data module')
     data_module = DataModule(data_train, data_test, data_val, tokenizer, batch_size=32)
@@ -296,12 +295,15 @@ def main():
     print(true_labels[:,0])
     print(pred_labels[:,0])
 
+    y_pred = pred_labels.round().astype(int)
 
     for i, categorie in enumerate(categories):
         print('%s true labels in loop' % (categorie))
         print(true_labels[:,i])
         print('%s pred labels in loop' % (categorie))
         print(pred_labels[:,i])
+        print("%s y_pred label" % (categorie))
+        print(y_pred[:,i])
         fpr, tpr, _ = metrics.roc_curve(true_labels[:,i], pred_labels[:,i])
         auc = metrics.roc_auc_score(true_labels[:,i], pred_labels[:, i])
         plt.plot(fpr, tpr, lw=2, label='%s %g' % (categorie, auc))
@@ -309,13 +311,20 @@ def main():
         accuracy = metrics.accuracy_score(true_labels[:,i], pred_labels[:, i].round(), normalize=True)
         print('%s accuracy : ' % (categorie), accuracy)
     # show other metrics
-    y_pred = pred_labels.round().astype(int)
     print(metrics.classification_report(true_labels, y_pred,target_names=categories))
-
     plt.xlabel('False Positive Rate')
     plt.ylabel('True Positive Rate')
     plt.legend(loc="best")
     plt.title('ROC curve') 
+    plt.show()
+
+    for i, categorie in enumerate(categories):
+        recall, precision, _ = metrics.precision_recall_curve(true_labels[:,i], pred_labels[:,i])
+        plt.plot(recall, precision, lw=2, label='%s' % (categorie))
+    plt.xlabel('Recall')
+    plt.ylabel('Precision')
+    plt.legend(loc="best")
+    plt.title('Precision-Recall Curve') 
     plt.show()
 
 if __name__ == '__main__':
