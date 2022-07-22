@@ -95,7 +95,7 @@ class SentenceClassifier(pl.LightningModule):
         super().__init__()
         self.config = config
         # distilBert Layer
-        self.bert = DistilBertForSequenceClassification.from_pretrained(model_name, return_dict = True)
+        self.bert = DistilBertModel.from_pretrained(model_name, return_dict = True)
         # pre-classifier layer
         if self.config['pre_classifier'] is not None:
             self.pre_classifier = nn.Linear(self.bert.config.hidden_size, 64)
@@ -121,7 +121,7 @@ class SentenceClassifier(pl.LightningModule):
         # distillBert layer
         output = self.bert(input_ids=input_ids, attention_mask=attention_mask)
 
-        # roberta output method
+        # distilBert output method
         if self.config['pool_method'] == 'pooler':
             pooled_output = output.pooler_output
         elif self.config['pool_method'] == 'mean':
