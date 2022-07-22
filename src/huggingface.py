@@ -52,7 +52,7 @@ class sentencesDataset(Dataset):
 
 class DataModule(pl.LightningDataModule):
 
-        def __init__(self, data_train, data_test, data_val, tokenizer, batch_size = 8, max_token_len = 128):
+        def __init__(self, data_train, data_test, data_val, tokenizer, batch_size = 32, max_token_len = 128):
             super().__init__()
             self.data_train = data_train
             self.data_test = data_test
@@ -98,7 +98,7 @@ class SentenceClassifier(pl.LightningModule):
         self.bert = DistilBertModel.from_pretrained(model_name, return_dict = True)
         # pre-classifier layer
         if self.config['pre_classifier'] is not None:
-            self.pre_classifier = nn.Linear(self.bert.config.hidden_size, 64)
+            self.pre_classifier = nn.Linear(self.bert.config.hidden_size, 768)
             #nn.init.xavier_uniform_(self.pre_classifier.weight)
             #nn.init.xavier_uniform_(self.classifier.weight)
         else:
@@ -108,7 +108,7 @@ class SentenceClassifier(pl.LightningModule):
         if self.config['dropout']:
             self.dropout = torch.nn.Dropout(0.3)
         # classifier layer
-        self.classifier = nn.Linear(64, self.config['n_classes'])
+        self.classifier = nn.Linear(768, self.config['n_classes'])
         # loss functions
         if self.config['class_weight'] is not None:
             self.loss_fct = nn.BCEWithLogitsLoss(pos_weight=torch.Tensor([1, 7, 3, 2, 1, 2, 15, 2]), reduction='none')
@@ -261,13 +261,13 @@ def main():
     tokenizer = DistilBertTokenizer.from_pretrained(model_name)
 
     print('data module')
-    data_module = DataModule(data_train, data_test, data_val, tokenizer, batch_size=8)
+    data_module = DataModule(data_train, data_test, data_val, tokenizer, batch_size=32)
     print('data setup')
     data_module.setup()
     
     config = {
         "lr": 1e-5,
-        "batch_size": 8,
+        "batch_size": 32,
         "max_token_len": 128,
         "n_epochs": 5,
         "weight_decay":0.01,
