@@ -14,7 +14,6 @@ import pytorch_lightning as pl
 import seaborn as sns
 from transformers import DistilBertModel, AdamW, DistilBertTokenizer, get_linear_schedule_with_warmup
 from sklearn.model_selection import train_test_split
-from classWeightTest import createPositiveWeights
 import evaluate 
 from sklearn import metrics
 import pandas as pd 
@@ -249,6 +248,7 @@ def main():
         for i in range(len(pos)):
             ratio = neg[i]/pos[i]
             neg_pos_ratio.append(ratio)
+        print(neg_pos_ratio)
 
         return neg_pos_ratio
 
@@ -271,7 +271,7 @@ def main():
         "lr": 1e-5,
         "batch_size": 32,
         "max_token_len": 128,
-        "n_epochs": 2,
+        "n_epochs": 1,
         "weight_decay":0.01,
         "n_classes":n_categories,
         "warmup":0.3,
