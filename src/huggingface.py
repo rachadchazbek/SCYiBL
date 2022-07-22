@@ -12,7 +12,7 @@ from sklearn.model_selection import train_test_split
 import numpy as np
 import pytorch_lightning as pl
 import seaborn as sns
-from transformers import DistilBertModel, AdamW, DistilBertTokenizer, get_linear_schedule_with_warmup
+from transformers import DistilBertModel, DistilBertForSequenceClassification, AdamW, DistilBertTokenizer, get_linear_schedule_with_warmup
 from sklearn.model_selection import train_test_split
 import evaluate 
 from sklearn import metrics
@@ -95,22 +95,23 @@ class SentenceClassifier(pl.LightningModule):
         super().__init__()
         self.config = config
         # distilBert Layer
-        self.bert = DistilBertModel.from_pretrained(model_name, return_dict = True)
-        # classifier and pre-classifier layers -------
+        self.bert = DistilBertForSequenceClassification.from_pretrained(model_name, return_dict = True)
+        # pre-classifier layer
         if self.config['pre_classifier'] is not None:
             self.pre_classifier = nn.Linear(self.bert.config.hidden_size, 64)
-            self.classifier = nn.Linear(64, self.config['n_classes'])
-            nn.init.xavier_uniform_(self.pre_classifier.weight)
-            nn.init.xavier_uniform_(self.classifier.weight)
+            #nn.init.xavier_uniform_(self.pre_classifier.weight)
+            #nn.init.xavier_uniform_(self.classifier.weight)
         else:
             self.classifier = nn.Linear(self.bert.config.hidden_size, self.config['n_classes'])
             nn.init.xavier_uniform_(self.classifier.weight)
-        # drop outs -------
+        # drop outs
         if self.config['dropout']:
-            self.dropout = torch.nn.Dropout(0.2)
-        # loss functions --------
+            self.dropout = torch.nn.Dropout(0.3)
+        # classifier layer
+        self.classifier = nn.Linear(64, self.config['n_classes'])
+        # loss functions
         if self.config['class_weight'] is not None:
-            self.loss_fct = nn.BCEWithLogitsLoss(pos_weight=torch.Tensor(self.config['class_weight']), reduction='none')
+            self.loss_fct = nn.BCEWithLogitsLoss(pos_weight=torch.Tensor([1, 7, 3, 2, 1, 2, 15, 2]), reduction='none')
         else:
             print('no class weight')
             self.loss_fct = nn.BCEWithLogitsLoss(reduction='none')
@@ -176,9 +177,6 @@ class SentenceClassifier(pl.LightningModule):
     def training_epoch_end(self, outputs):
         labels,predictions, roc =[],[],[]
         # voir les données sur lesquels le model s'entraine
-
-        # calculating average loss
-        #avg_loss = torch.stack([x['loss'] for x in outputs]).mean()
 
         for output in outputs:
             for output_labels in output['labels'].detach().cpu():
@@ -263,15 +261,15 @@ def main():
     tokenizer = DistilBertTokenizer.from_pretrained(model_name)
 
     print('data module')
-    data_module = DataModule(data_train, data_test, data_val, tokenizer, batch_size=32)
+    data_module = DataModule(data_train, data_test, data_val, tokenizer, batch_size=8)
     print('data setup')
     data_module.setup()
     
     config = {
         "lr": 1e-5,
-        "batch_size": 32,
+        "batch_size": 8,
         "max_token_len": 128,
-        "n_epochs": 1,
+        "n_epochs": 5,
         "weight_decay":0.01,
         "n_classes":n_categories,
         "warmup":0.3,
@@ -349,3 +347,9 @@ def main():
 if __name__ == '__main__':
     freeze_support()
     main()
+
+# positive/negative ratio for each categories
+# [0.8195232690124858, 9.210191082802547, 4.745519713261649, 3.0582278481012657, 0.48977695167286245, 4.088888888888889, 30.431372549019606, 3.1102564102564103]
+# [1, 5, 3, 2, 1, 2, 10, 2]
+# up constructivism from 5 to 9
+# up exposure/habit from 10 to 15
