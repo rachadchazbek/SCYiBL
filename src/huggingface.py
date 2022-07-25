@@ -12,7 +12,7 @@ from sklearn.model_selection import train_test_split
 import numpy as np
 import pytorch_lightning as pl
 import seaborn as sns
-from transformers import DistilBertModel, DistilBertForSequenceClassification, AdamW, DistilBertTokenizer, get_linear_schedule_with_warmup
+from transformers import RobertaTokenizer, RobertaModel, DistilBertModel, AdamW, DistilBertTokenizer, get_linear_schedule_with_warmup
 from sklearn.model_selection import train_test_split
 import evaluate 
 from sklearn import metrics
@@ -22,11 +22,11 @@ from torch.utils.data import Dataset, DataLoader
 
 categories = ['CP', 'Constructivism', 'Coping', 'ED', 'ER/SR', 'Empowerment', 'Exposure/Habit', 'PERMA']
 n_categories = len(categories)
-model_name = 'distilbert-base-uncased-finetuned-sst-2-english'
+model_name = 'roberta-base' #'distilbert-base-uncased-finetuned-sst-2-english'
 
 class sentencesDataset(Dataset):
 
-    def __init__(self, data: pd.DataFrame, tokenizer: DistilBertTokenizer, max_token_len: int = 30):
+    def __init__(self, data: pd.DataFrame, tokenizer: RobertaTokenizer, max_token_len: int = 30):
         self.data = data
         self.tokenizer = tokenizer
         self.max_token_len = max_token_len
@@ -95,12 +95,11 @@ class SentenceClassifier(pl.LightningModule):
         super().__init__()
         self.config = config
         # distilBert Layer
-        self.bert = DistilBertModel.from_pretrained(model_name, return_dict = True)
+        self.bert = RobertaModel.from_pretrained(model_name, return_dict = True)
         # pre-classifier layer
         if self.config['pre_classifier'] is not None:
             self.pre_classifier = nn.Linear(self.bert.config.hidden_size, 768)
-            #nn.init.xavier_uniform_(self.pre_classifier.weight)
-            #nn.init.xavier_uniform_(self.classifier.weight)
+            nn.init.xavier_uniform_(self.pre_classifier.weight)
         else:
             self.classifier = nn.Linear(self.bert.config.hidden_size, self.config['n_classes'])
             nn.init.xavier_uniform_(self.classifier.weight)
@@ -109,6 +108,7 @@ class SentenceClassifier(pl.LightningModule):
             self.dropout = torch.nn.Dropout(0.3)
         # classifier layer
         self.classifier = nn.Linear(768, self.config['n_classes'])
+        nn.init.xavier_uniform_(self.classifier.weight)
         # loss functions
         if self.config['class_weight'] is not None:
             self.loss_fct = nn.BCEWithLogitsLoss(pos_weight=torch.Tensor([1, 7, 3, 2, 1, 2, 15, 2]), reduction='none')
@@ -258,7 +258,7 @@ def main():
     print('data val')
     print(data_val)
 
-    tokenizer = DistilBertTokenizer.from_pretrained(model_name)
+    tokenizer = RobertaTokenizer.from_pretrained(model_name)
 
     print('data module')
     data_module = DataModule(data_train, data_test, data_val, tokenizer, batch_size=32)
@@ -266,14 +266,14 @@ def main():
     data_module.setup()
     
     config = {
-        "lr": 1e-5,
+        "lr": 1.5e-5,
         "batch_size": 32,
         "max_token_len": 128,
         "n_epochs": 5,
         "weight_decay":0.01,
         "n_classes":n_categories,
         "warmup":0.3,
-        "dropout":True,
+        "dropout":False,
         "train_size": len(data_module.train_dataloader()),
         "pre_classifier":'relu',
         "pool_method":'mean',
