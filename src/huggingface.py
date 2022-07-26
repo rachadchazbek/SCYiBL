@@ -269,7 +269,7 @@ def main():
         "lr": 1.5e-5,
         "batch_size": 32,
         "max_token_len": 128,
-        "n_epochs": 10,
+        "n_epochs": 25,
         "weight_decay":0.01,
         "n_classes":n_categories,
         "warmup":0.3,
