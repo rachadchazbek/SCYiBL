@@ -1,6 +1,4 @@
 from multiprocessing import freeze_support
-from re import A
-from regex import R
 import torch
 import math
 import torch.nn as nn
@@ -14,7 +12,6 @@ import pytorch_lightning as pl
 import seaborn as sns
 from transformers import RobertaTokenizer, RobertaModel, DistilBertModel, AdamW, DistilBertTokenizer, get_linear_schedule_with_warmup
 from sklearn.model_selection import train_test_split
-import evaluate 
 from sklearn import metrics
 import pandas as pd 
 import matplotlib.pyplot as plt
@@ -267,10 +264,10 @@ def main():
     
     config = {
         "lr": 1.5e-5,
-        "batch_size": 32,
+        "batch_size": 10,
         "max_token_len": 128,
-        "n_epochs": 10,
-        "weight_decay":0.01,
+        "n_epochs": 5,
+        "weight_decay":0.001,
         "n_classes":n_categories,
         "warmup":0.3,
         "dropout":False,
