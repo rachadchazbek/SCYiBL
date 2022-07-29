@@ -348,5 +348,5 @@ if __name__ == '__main__':
 # positive/negative ratio for each categories
 # [0.8195232690124858, 9.210191082802547, 4.745519713261649, 3.0582278481012657, 0.48977695167286245, 4.088888888888889, 30.431372549019606, 3.1102564102564103]
 # [1, 5, 3, 2, 1, 2, 10, 2]
-# up constructivism from 5 to 9
+# up constructivism from 5 to 7
 # up exposure/habit from 10 to 15
