@@ -19,8 +19,11 @@ from torch.utils.data import Dataset, DataLoader
 
 categories = ['CP', 'Constructivism', 'Coping', 'ED', 'ER/SR', 'Empowerment', 'Exposure/Habit', 'PERMA']
 n_categories = len(categories)
+# choose pretrained model from hugging face 
 model_name = 'roberta-base' #'distilbert-base-uncased-finetuned-sst-2-english'
 
+# Puts data in a format accessible to the model 
+# w/ tokenizers, embeddings and attentions
 class sentencesDataset(Dataset):
 
     def __init__(self, data: pd.DataFrame, tokenizer: RobertaTokenizer, max_token_len: int = 30):
@@ -69,6 +72,7 @@ class DataModule(pl.LightningDataModule):
             print('val dataset')
             print(self.val_dataset) 
 
+        # dataloaders are used by pytorch to run the model
         def train_dataloader(self):
             print('using train dataloader')
             print(self.train_dataset.__len__())
@@ -86,6 +90,7 @@ class DataModule(pl.LightningDataModule):
             print(self.test_dataset.__len__())
             return DataLoader(self.test_dataset,batch_size=self.batch_size,num_workers=2, shuffle=False)
 
+# NN model, 3 layers (pretrained model - linear preclassifier - linear classifier)
 class SentenceClassifier(pl.LightningModule):
 
     def __init__(self, config: dict):
@@ -108,6 +113,8 @@ class SentenceClassifier(pl.LightningModule):
         nn.init.xavier_uniform_(self.classifier.weight)
         # loss functions
         if self.config['class_weight'] is not None:
+            # weights were chosen after trial and error
+            # use createPositiveWeights function to obtain negative label/positive label ratio for each categories 
             self.loss_fct = nn.BCEWithLogitsLoss(pos_weight=torch.Tensor([1, 7, 3, 2, 1, 2, 15, 2]), reduction='none')
         else:
             print('no class weight')
@@ -148,7 +155,7 @@ class SentenceClassifier(pl.LightningModule):
             loss = torch.mean(loss)
         return loss, logits
 
-
+    # Steps are used by the trainer
     def training_step(self, batch, batch_index):
         loss, outputs = self(**batch)
         self.log("train loss", loss, prog_bar = True, logger = True)
@@ -173,7 +180,6 @@ class SentenceClassifier(pl.LightningModule):
 
     def training_epoch_end(self, outputs):
         labels,predictions, roc =[],[],[]
-        # voir les données sur lesquels le model s'entraine
 
         for output in outputs:
             for output_labels in output['labels'].detach().cpu():
@@ -220,7 +226,7 @@ def main():
     categories = ['CP', 'Constructivism', 'Coping', 'ED', 'ER/SR', 'Empowerment', 'Exposure/Habit', 'PERMA']
     n_categories = len(categories)
 
-    # Split dataset: train 80, test 20 + shuffle 
+    # Split dataset: train 80, test 13.2 (used for prediction), validate 6.8
     def split_data(data_path):
         data = pd.read_pickle(data_path)
         data = data.drop(columns=['index'])
@@ -228,6 +234,10 @@ def main():
         x_test, x_val = train_test_split(x_testAndVal, test_size=0.33,shuffle=True)
         return x_train, x_test, x_val
     
+    # takes the dataframe and calculate negative label/positive label ratio
+    # for each categories 
+    # Results for dataset of 1603 sentences:
+    # [0.8195232690124858, 9.210191082802547, 4.745519713261649, 3.0582278481012657, 0.48977695167286245, 4.088888888888889, 30.431372549019606, 3.1102564102564103]
     def createPositiveWeights(data_path):
         df = pd.read_pickle(data_path)
         categories = ['CP', 'Constructivism', 'Coping', 'ED', 'ER/SR', 'Empowerment', 'Exposure/Habit', 'PERMA']
@@ -344,9 +354,3 @@ def main():
 if __name__ == '__main__':
     freeze_support()
     main()
-
-# positive/negative ratio for each categories
-# [0.8195232690124858, 9.210191082802547, 4.745519713261649, 3.0582278481012657, 0.48977695167286245, 4.088888888888889, 30.431372549019606, 3.1102564102564103]
-# [1, 5, 3, 2, 1, 2, 10, 2]
-# up constructivism from 5 to 7
-# up exposure/habit from 10 to 15
