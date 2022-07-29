@@ -238,6 +238,7 @@ def main():
     # for each categories 
     # Results for dataset of 1603 sentences:
     # [0.8195232690124858, 9.210191082802547, 4.745519713261649, 3.0582278481012657, 0.48977695167286245, 4.088888888888889, 30.431372549019606, 3.1102564102564103]
+    # try ratio label negative / total nb of sentences  
     def createPositiveWeights(data_path):
         df = pd.read_pickle(data_path)
         categories = ['CP', 'Constructivism', 'Coping', 'ED', 'ER/SR', 'Empowerment', 'Exposure/Habit', 'PERMA']
