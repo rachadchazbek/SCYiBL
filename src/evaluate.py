@@ -1,8 +1,8 @@
 from multiprocessing import freeze_support
-from regex import R
 import torch
 import math
 import torch.nn as nn
+from torch.utils.tensorboard import SummaryWriter
 from torch.nn import BCEWithLogitsLoss
 import torch.nn.functional as F
 from torchmetrics.functional.classification import auroc
@@ -10,9 +10,8 @@ from sklearn.model_selection import train_test_split
 import numpy as np
 import pytorch_lightning as pl
 import seaborn as sns
-from transformers import DistilBertModel, AdamW, DistilBertTokenizer, get_linear_schedule_with_warmup
+from transformers import RobertaTokenizer, RobertaModel, DistilBertModel, AdamW, DistilBertTokenizer, get_linear_schedule_with_warmup
 from sklearn.model_selection import train_test_split
-import evaluate 
 from sklearn import metrics
 import pandas as pd 
 import matplotlib.pyplot as plt
@@ -20,11 +19,11 @@ from torch.utils.data import Dataset, DataLoader
 
 categories = ['CP', 'Constructivism', 'Coping', 'ED', 'ER/SR', 'Empowerment', 'Exposure/Habit', 'PERMA']
 n_categories = len(categories)
-model_name = 'distilbert-base-uncased-finetuned-sst-2-english'
+model_name = 'roberta-base' #'distilbert-base-uncased-finetuned-sst-2-english'
 
 class sentencesDataset(Dataset):
 
-    def __init__(self, data: pd.DataFrame, tokenizer: DistilBertTokenizer, max_token_len: int = 30):
+    def __init__(self, data: pd.DataFrame, tokenizer: RobertaTokenizer, max_token_len: int = 30):
         self.data = data
         self.tokenizer = tokenizer
         self.max_token_len = max_token_len
@@ -50,7 +49,7 @@ class sentencesDataset(Dataset):
 
 class DataModule(pl.LightningDataModule):
 
-        def __init__(self, data_train, data_test, data_val, tokenizer, batch_size = 8, max_token_len = 128):
+        def __init__(self, data_train, data_test, data_val, tokenizer, batch_size = 32, max_token_len = 128):
             super().__init__()
             self.data_train = data_train
             self.data_test = data_test
@@ -78,10 +77,10 @@ class DataModule(pl.LightningDataModule):
             print('using val dataloader')
             print(self.val_dataset.__len__())
             return DataLoader(self.val_dataset,batch_size=self.batch_size,num_workers=1)
-        # def predict_dataloader(self):
-        #     print('using test dataloader')
-        #     print(self.test_dataset.__len__())
-        #     return DataLoader(self.test_dataset,batch_size=self.batch_size,num_workers=2, shuffle=False)
+        def predict_dataloader(self):
+            print('using test dataloader')
+            print(self.test_dataset.__len__())
+            return DataLoader(self.test_dataset,batch_size=self.batch_size,num_workers=1, shuffle=False)
         def test_dataloader(self):
             print('using test dataloader')
             print(self.test_dataset.__len__())
@@ -93,35 +92,41 @@ class SentenceClassifier(pl.LightningModule):
         super().__init__()
         self.config = config
         # distilBert Layer
-        self.bert = DistilBertModel.from_pretrained(model_name, return_dict = True)
-        # classifier and pre-classifier layers -------
+        self.bert = RobertaModel.from_pretrained(model_name, return_dict = True)
+        # pre-classifier layer
         if self.config['pre_classifier'] is not None:
-            self.pre_classifier = torch.nn.Linear(self.bert.config.hidden_size, 64)
-            self.classifier = torch.nn.Linear(64, self.config['n_classes'])
-            torch.nn.init.xavier_uniform_(self.pre_classifier.weight)
-            torch.nn.init.xavier_uniform_(self.classifier.weight)
+            self.pre_classifier = nn.Linear(self.bert.config.hidden_size, 768)
+            nn.init.xavier_uniform_(self.pre_classifier.weight)
         else:
-            self.classifier = torch.nn.Linear(self.bert.config.hidden_size, self.config['n_classes'])
-            torch.nn.init.xavier_uniform_(self.classifier.weight)
-        # drop outs -------
+            self.classifier = nn.Linear(self.bert.config.hidden_size, self.config['n_classes'])
+            nn.init.xavier_uniform_(self.classifier.weight)
+        # dropout
         if self.config['dropout']:
             self.dropout = torch.nn.Dropout(0.2)
-        # loss functions --------
+        # classifier layer
+        self.classifier = nn.Linear(768, self.config['n_classes'])
+        nn.init.xavier_uniform_(self.classifier.weight)
+        # loss functions
         if self.config['class_weight'] is not None:
-            self.loss_fct = nn.BCEWithLogitsLoss(pos_weight=self.config['class_weight'], reduction='none')
+            self.loss_fct = nn.BCEWithLogitsLoss(pos_weight=torch.Tensor([1, 7, 3, 2, 1, 2, 15, 2]), reduction='none')
         else:
             print('no class weight')
-        self.loss_fct = nn.BCEWithLogitsLoss(reduction='none')
+            self.loss_fct = nn.BCEWithLogitsLoss(reduction='none')
+
 
     def forward(self, input_ids, attention_mask, sample_weights=None, labels=None):
         # distillBert layer
         output = self.bert(input_ids=input_ids, attention_mask=attention_mask)
 
-        # roberta output method
+        # distilBert output method
         if self.config['pool_method'] == 'pooler':
             pooled_output = output.pooler_output
         elif self.config['pool_method'] == 'mean':
             pooled_output = torch.mean(output.last_hidden_state,1)
+
+        # drop out
+        if self.config['dropout']:
+            pooled_output = self.dropout(pooled_output)
 
         # tahn or relu
         if self.config['pre_classifier'] is not None:
@@ -130,10 +135,6 @@ class SentenceClassifier(pl.LightningModule):
             pooled_output = torch.tanh(pooled_output)
         else:
             pooled_output = torch.relu(pooled_output)
-
-        # drop out
-        if self.config['dropout']:
-            pooled_output = self.dropout(pooled_output)
 
         # final logits
         logits = self.classifier(pooled_output)
@@ -152,29 +153,23 @@ class SentenceClassifier(pl.LightningModule):
         loss, outputs = self(**batch)
         self.log("train loss", loss, prog_bar = True, logger = True)
         return {"loss": loss, "predictions": outputs, "labels": batch["labels"]}
-    
-    def test_step(self, batch, batch_idx):
+
+    def validation_step(self, batch, batch_index):
+        loss, outputs = self(**batch)
+        self.log("validation loss", loss, prog_bar = True, logger = True)
+        return {"val loss": loss, "predictions": outputs, "labels": batch["labels"]}
+
+    def test_step(self, batch, batch_index):
         input_ids = batch["input_ids"]
         attention_mask = batch["attention_mask"]
         labels = batch["labels"]
         loss, outputs = self(input_ids, attention_mask, labels)
         self.log("test_loss", loss, prog_bar=True, logger=True)
         return loss
-
-    def validation_step(self, batch, batch_index):
-        input_ids = batch["input_ids"]
-        attention_mask = batch["attention_mask"]
-        labels = batch["labels"]
-        loss, outputs = self(input_ids, attention_mask, labels)
-        self.log("val loss", loss, prog_bar = True, logger = True)
-        return {"val_loss": loss, "predictions":outputs, "labels": labels}
-
-    # def predict_step(self, batch, batch_index):
-    #     input_ids = batch["input_ids"]
-    #     attention_mask = batch["attention_mask"]
-    #     labels = batch["labels"]
-    #     loss, outputs = self(input_ids, attention_mask, labels)
-    #     return labels
+    
+    def predict_step(self, batch, batch_index):
+        _, logits = self(**batch)
+        return logits
 
     def training_epoch_end(self, outputs):
         labels,predictions, roc =[],[],[]
@@ -230,8 +225,27 @@ def main():
         data = pd.read_pickle(data_path)
         data = data.drop(columns=['index'])
         x_train, x_testAndVal = train_test_split(data, test_size=0.2, shuffle=True)
-        x_test, x_val = train_test_split(x_testAndVal, test_size=0.66,shuffle=True)
+        x_test, x_val = train_test_split(x_testAndVal, test_size=0.33,shuffle=True)
         return x_train, x_test, x_val
+    
+    def createPositiveWeights(data_path):
+        df = pd.read_pickle(data_path)
+        categories = ['CP', 'Constructivism', 'Coping', 'ED', 'ER/SR', 'Empowerment', 'Exposure/Habit', 'PERMA']
+        labels = df[categories]
+        pos = []
+        neg = []
+        N = len(df)
+        for k, label in enumerate(labels):
+            pos.append(sum(df[label] == 1))
+            neg.append(N - pos[k])
+        neg_pos_ratio = []
+
+        for i in range(len(pos)):
+            ratio = neg[i]/pos[i]
+            neg_pos_ratio.append(ratio)
+        print(neg_pos_ratio)
+
+        return neg_pos_ratio
 
     data_train, data_test, data_val = split_data("data/data_huggingface.pkl")
     print('data train')
@@ -241,8 +255,7 @@ def main():
     print('data val')
     print(data_val)
 
-    tokenizer = DistilBertTokenizer.from_pretrained(model_name)
-    #model = DistilBertModel.from_pretrained(model_name, return_dict=True)
+    tokenizer = RobertaTokenizer.from_pretrained(model_name)
 
     print('data module')
     data_module = DataModule(data_train, data_test, data_val, tokenizer, batch_size=32)
@@ -250,19 +263,19 @@ def main():
     data_module.setup()
     
     config = {
-        "lr": 1e-5,
-        "batch_size": 8,
+        "lr": 1.5e-5,
+        "batch_size": 10,
         "max_token_len": 128,
-        "n_epochs": 4,
-        "weight_decay":0.01,
+        "n_epochs": 10,
+        "weight_decay":0.001,
         "n_classes":n_categories,
         "warmup":0.3,
-        "dropout":True,
+        "dropout":False,
         "train_size": len(data_module.train_dataloader()),
         "pre_classifier":'relu',
         "pool_method":'mean',
-        "class_weight":None,
-        'sample_weight': None,
+        "class_weight": createPositiveWeights("data/data_huggingface.pkl"),
+        'sample_weight': True,
         "optim":'sgd'
     }
 
@@ -270,13 +283,13 @@ def main():
     print('model loading')
     model = SentenceClassifier(config)
     print('trainer')
-    trainer = pl.Trainer(max_epochs=config['n_epochs'], num_sanity_val_steps=10)
+    trainer = pl.Trainer(max_epochs=config['n_epochs'], num_sanity_val_steps=10, log_every_n_steps=10, logger=True)
     checkpoint_path = 'output/preTrainedModel.ckpt'
     print('trainer fit')
     trainer.fit(model, data_module, ckpt_path=checkpoint_path)
-    trainer.save_checkpoint(checkpoint_path) 
-    print("***trainer test***")
-    trainer.test(model, data_module.test_dataloader())
+    trainer.save_checkpoint(checkpoint_path)
+    #print("***trainer test***")
+    # trainer.test(model, data_module.test_dataloader())
     print("***trainer validate***")
     trainer.validate(model, data_module.val_dataloader())
 
@@ -284,45 +297,56 @@ def main():
     true_labels = np.array(data_test[categories])
 
     # pred labels 
-    # def predict(m, dm, ckpt_path):
-    #     predictions = trainer.predict(m, dm, ckpt_path)
-    #     flattened_predictions = [p>0.5 for batch in predictions for p in batch]
-    #     flattened_predictions = np.stack(flattened_predictions)
-    #     return flattened_predictions
+    def predict(m, dm):
+        predictions = trainer.predict(m, dm)
+        flattened_predictions = np.stack([torch.sigmoid(torch.Tensor(p)) for batch in predictions for p in batch])
+        return flattened_predictions
     
-    # print('time to predict')
-    # pred_labels = predict(model, data_module, checkpoint_path)
-    # print(pred_labels[:,2])
+    print('time to predict')
+    pred_labels = predict(model, data_module)
+        
+    print('labels outside loop')
+    print(true_labels[:,0])
+    print(pred_labels[:,0])
 
-    # # Converting to binary
-    # to_binary = {True: 1, False: 0}
-    # pred_labels = np.vectorize(to_binary.get)(pred_labels)
-    # #true_labels = np.vectorize(to_binary.get)(true_labels)
-    # fpr = dict()
-    # tpr = dict()
-    # auc = dict()
-    # print("pred labels", pred_labels[:,2])
-    # print("true_labels", true_labels[:,2])
-    # for i in range(n_categories):
-    #     fpr[i], tpr[i], _ = metrics.roc_curve(true_labels[:,i], pred_labels[:,i])
-    #     auc[i] = metrics.roc_auc_score(true_labels[:,i], pred_labels[:, i])
-    #     # roc_auc_score = evaluate.load("roc_auc")
-    #     # auc[i] = roc_auc_score.compute(references=true_labels[:,i], prediction_scores= pred_labels[:, i])
+    y_pred = pred_labels.round().astype(int)
 
-    #     # precision = evaluate.load("precision")
-    #     # accuracy[i] = precision.compute(references=true_labels[:,i], prediction_scores= pred_labels[:, i])
+    for i, categorie in enumerate(categories):
+        print('%s true labels in loop' % (categorie))
+        print(true_labels[:,i])
+        print('%s pred labels in loop' % (categorie))
+        print(pred_labels[:,i])
+        print("%s y_pred label" % (categorie))
+        print(y_pred[:,i])
+        fpr, tpr, _ = metrics.roc_curve(true_labels[:,i], pred_labels[:,i])
+        auc = metrics.roc_auc_score(true_labels[:,i], pred_labels[:, i])
+        plt.plot(fpr, tpr, lw=2, label='%s %g' % (categorie, auc))
+        
+        accuracy = metrics.accuracy_score(true_labels[:,i], pred_labels[:, i].round(), normalize=True)
+        print('%s accuracy : ' % (categorie), accuracy)
+    # show other metrics
+    print(metrics.classification_report(true_labels, y_pred,target_names=categories))
+    plt.xlabel('False Positive Rate')
+    plt.ylabel('True Positive Rate')
+    plt.legend(loc="best")
+    plt.title('ROC curve') 
+    plt.show()
 
-    #     # recall = evaluate.load("recall")
-    #     # tpr[i] = recall.compute(references=true_labels[:,i], prediction_scores= pred_labels[:, i])
-    #     plt.plot(fpr[i], tpr[i], lw=2, label=f'{categories[i]}, {auc[i]}')
-    # plt.xlabel('False Positive Rate')
-    # plt.ylabel('True Positive Rate')
-    # plt.legend(loc="best")
-    # plt.title('ROC curve') 
-    # plt.show()
-    # # ADD SOME METRICS 
-    # print(metrics.classification_report(true_labels, pred_labels, target_names=categories))
+    for i, categorie in enumerate(categories):
+        recall, precision, _ = metrics.precision_recall_curve(true_labels[:,i], pred_labels[:,i])
+        plt.plot(recall, precision, lw=2, label='%s' % (categorie))
+    plt.xlabel('Recall')
+    plt.ylabel('Precision')
+    plt.legend(loc="best")
+    plt.title('Precision-Recall Curve') 
+    plt.show()
 
 if __name__ == '__main__':
     freeze_support()
     main()
+
+# positive/negative ratio for each categories
+# [0.8195232690124858, 9.210191082802547, 4.745519713261649, 3.0582278481012657, 0.48977695167286245, 4.088888888888889, 30.431372549019606, 3.1102564102564103]
+# [1, 5, 3, 2, 1, 2, 10, 2]
+# up constructivism from 5 to 7
+# up exposure/habit from 10 to 15
