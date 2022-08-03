@@ -3,7 +3,6 @@ from flask import Flask, jsonify, request, make_response
 import numpy as np
 import torch
 
-
 # def predict(m, dm):
 #     predictions = trainer.predict(m, dm)
 #     flattened_predictions = np.stack([torch.sigmoid(torch.Tensor(p)) for batch in predictions for p in batch])
@@ -16,8 +15,10 @@ app = Flask(__name__)
 
 @app.route('/', methods = ['POST'])
 def result():
-    message = request.form.get('message')
+    message = request.form['message']
     print(message)
+    response = make_response(message, 200)
+    return response
     # results = predict(message)
     #Prediction is used here
     #then you resturn a response with the values
