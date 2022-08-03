@@ -1,8 +1,11 @@
 # Create the predict function
 from flask import Flask, jsonify, request, make_response
-import numpy as np
 import torch
+import numpy as np
+from pytorch_lightning import LightningModule
 
+checkpoint_path = '../output/preTrainedModel.ckpt'
+model = new_model = LightningModule.load_from_checkpoint(checkpoint_path=checkpoint_path)
 # def predict(m, dm):
 #     predictions = trainer.predict(m, dm)
 #     flattened_predictions = np.stack([torch.sigmoid(torch.Tensor(p)) for batch in predictions for p in batch])
@@ -17,11 +20,11 @@ app = Flask(__name__)
 def result():
     message = request.form['message']
     print(message)
-    response = make_response(message, 200)
-    return response
     # results = predict(message)
     #Prediction is used here
-    #then you resturn a response with the values
+    #then you resturn a response with the assigned categories
+    response = make_response(message, 200)
+    return response
 
 if __name__ == '__main__':
     # starting app
