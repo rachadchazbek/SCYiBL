@@ -16,7 +16,8 @@ app = Flask(__name__)
 
 @app.route('/', methods = ['POST'])
 def result():
-    message = request.form['message']
+    message = request.form.get('message')
+    print(message)
     # results = predict(message)
     #Prediction is used here
     #then you resturn a response with the values
