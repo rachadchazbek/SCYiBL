@@ -20,3 +20,7 @@ def result():
     # results = predict(message)
     #Prediction is used here
     #then you resturn a response with the values
+
+if __name__ == '__main__':
+    # starting app
+    app.run(debug=True,host='0.0.0.0')
