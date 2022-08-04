@@ -4,8 +4,8 @@ import torch
 import numpy as np
 from pytorch_lightning import LightningModule
 
-checkpoint_path = '../output/preTrainedModel.ckpt'
-model = new_model = LightningModule.load_from_checkpoint(checkpoint_path=checkpoint_path)
+checkpoint_path = './output/preTrainedModel.ckpt'
+model = torch.load(checkpoint_path)
 # def predict(m, dm):
 #     predictions = trainer.predict(m, dm)
 #     flattened_predictions = np.stack([torch.sigmoid(torch.Tensor(p)) for batch in predictions for p in batch])
@@ -15,11 +15,11 @@ model = new_model = LightningModule.load_from_checkpoint(checkpoint_path=checkpo
 
 app = Flask(__name__)
 
-
 @app.route('/', methods = ['POST'])
 def result():
     message = request.form['message']
     print(message)
+    print(model)
     # results = predict(message)
     #Prediction is used here
     #then you resturn a response with the assigned categories
