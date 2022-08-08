@@ -101,10 +101,10 @@ class SentenceClassifier(pl.LightningModule):
         # pre-classifier layer
         if self.config['pre_classifier'] is not None:
             self.pre_classifier = nn.Linear(self.bert.config.hidden_size, 768)
-            nn.init.xavier_uniform_(self.pre_classifier.weight)
+            # nn.init.xavier_uniform_(self.pre_classifier.weight)
         else:
             self.classifier = nn.Linear(self.bert.config.hidden_size, self.config['n_classes'])
-            nn.init.xavier_uniform_(self.classifier.weight)
+            # nn.init.xavier_uniform_(self.classifier.weight)
         # dropout
         if self.config['dropout']:
             self.dropout = torch.nn.Dropout(0.2)
