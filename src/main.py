@@ -20,9 +20,8 @@ model = torch.load(checkpoint_path)
 # Code the flask APP
 def string_to_dataframe(sentence: string):
     s_nd_array=np.array([["app",sentence, 0, 0, 0, 0, 0, 0, 0, 0 ]])
-    dataframe=pd.DataFrame(s_nd_array, columns=categories)
+    dataframe=pd.DataFrame(s_nd_array, columns=['Source', 'Sentence', *categories])
     return dataframe
-    
 
 @app.route('/', methods = ['POST'])
 def result():
