@@ -13,13 +13,9 @@ from sentenceClassifier import SentenceClassifier
 
 categories = ['CP', 'Constructivism', 'Coping', 'ED', 'ER/SR', 'Empowerment', 'Exposure/Habit', 'PERMA']
 n_categories = len(categories)
-model_name = 'roberta-base' #'distilbert-base-uncased-finetuned-sst-2-english'
+model_name = 'roberta-base'
 
 def main(): 
-    categories = ['CP', 'Constructivism', 'Coping', 'ED', 'ER/SR', 'Empowerment', 'Exposure/Habit', 'PERMA']
-    n_categories = len(categories)
-
-    # Split dataset: train 80, test 20 + shuffle 
     def split_data(data_path):
         data = pd.read_pickle(data_path)
         data = data.drop(columns=['index'])
@@ -29,7 +25,6 @@ def main():
     
     def createPositiveWeights(data_path):
         df = pd.read_pickle(data_path)
-        categories = ['CP', 'Constructivism', 'Coping', 'ED', 'ER/SR', 'Empowerment', 'Exposure/Habit', 'PERMA']
         labels = df[categories]
         pos = []
         neg = []
@@ -47,18 +42,8 @@ def main():
         return neg_pos_ratio
 
     data_train, data_test, data_val = split_data("data/data_huggingface.pkl")
-    print('data train')
-    print(data_train)
-    print('data test')
-    print(data_test)
-    print('data val')
-    print(data_val)
-
     tokenizer = RobertaTokenizer.from_pretrained(model_name)
-
-    print('data module')
     data_module = DataModule(data_train, data_test, data_val, tokenizer, batch_size=32)
-    print('data setup')
     data_module.setup()
     
     config = {
@@ -79,15 +64,11 @@ def main():
     }
 
     # Modeling
-    print('model loading')
-    model = SentenceClassifier(config)
-    print('trainer')
-    trainer = pl.Trainer(max_epochs=config['n_epochs'], num_sanity_val_steps=10, log_every_n_steps=10, logger=True)
     checkpoint_path = 'output/preTrainedModel.ckpt'
-    print('trainer fit')
+    model = SentenceClassifier(config)
+    trainer = pl.Trainer(max_epochs=config['n_epochs'], num_sanity_val_steps=10, log_every_n_steps=10, logger=True)
     trainer.fit(model, data_module) #ckpt_path=checkpoint_path
     trainer.save_checkpoint(checkpoint_path)
-    print("***trainer validate***")
     trainer.validate(model, data_module.val_dataloader())
 
     # true labels 
@@ -101,10 +82,8 @@ def main():
     
     print('time to predict')
     pred_labels = predict(model, data_module)
-        
-    print('labels outside loop')
-    print(true_labels[:,0])
-    print(pred_labels[:,0])
+
+    s_pred_label = DataModule(predict_dataset="my string", tokenizer=tokenizer)
 
     y_pred = pred_labels.round().astype(int)
 
@@ -141,9 +120,3 @@ def main():
 if __name__ == '__main__':
     freeze_support()
     main()
-
-# positive/negative ratio for each categories
-# [0.8195232690124858, 9.210191082802547, 4.745519713261649, 3.0582278481012657, 0.48977695167286245, 4.088888888888889, 30.431372549019606, 3.1102564102564103]
-# [1, 5, 3, 2, 1, 2, 10, 2]
-# up constructivism from 5 to 7
-# up exposure/habit from 10 to 15
