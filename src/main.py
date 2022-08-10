@@ -1,22 +1,23 @@
 # Create the predict function
+from multiprocessing import freeze_support
 import string
 from flask import Flask, jsonify, request, make_response
 import torch
 import pandas as pd
 import numpy as np
-from pytorch_lightning import LightningModule
 from transformers import RobertaTokenizer
 import pytorch_lightning as pl
 from dataModule import DataModule
 from sklearn.model_selection import train_test_split
+from evaluate import SentenceClassifier
 
 app = Flask(__name__)
 model_name = 'roberta-base'
 categories = ['CP', 'Constructivism', 'Coping', 'ED', 'ER/SR', 'Empowerment', 'Exposure/Habit', 'PERMA']
 n_categories = len(categories)
 checkpoint_path = './output/preTrainedModel.ckpt'
-model = torch.load(checkpoint_path)
 tokenizer = RobertaTokenizer.from_pretrained(model_name)
+
 
 def split_data(data_path):
         data = pd.read_pickle(data_path)
@@ -45,30 +46,32 @@ def createPositiveWeights(data_path):
     return neg_pos_ratio
 
 
+
+data_train, data_test, data_val = split_data("data/data_huggingface.pkl")
+data_module = DataModule(data_train, data_test, data_val, tokenizer, batch_size=32)
+data_module.setup()
+config = {
+    "lr": 1.5e-5,
+    "batch_size": 10,
+    "max_token_len": 128,
+    "n_epochs": 10,
+    "weight_decay":0.001,
+    "n_classes":n_categories,
+    "warmup":0.3,
+    "dropout":False,
+    "train_size": len(data_module.train_dataloader()),
+    "pre_classifier":'relu',
+    "pool_method":'mean',
+    "class_weight": createPositiveWeights("data/data_huggingface.pkl"),
+    'sample_weight': True,
+    "optim":'sgd'
+}
+model = SentenceClassifier(config)
+
+trainer = pl.Trainer(max_epochs=config['n_epochs'], num_sanity_val_steps=10, log_every_n_steps=10, logger=True)
+trainer.fit(model, data_module)
+
 def predict(m, dm):
-    data_train, data_test, data_val = split_data("data/data_huggingface.pkl")
-    data_module = DataModule(data_train, data_test, data_val, tokenizer, batch_size=32)
-    data_module.setup()
-    config = {
-        "lr": 1.5e-5,
-        "batch_size": 10,
-        "max_token_len": 128,
-        "n_epochs": 10,
-        "weight_decay":0.001,
-        "n_classes":n_categories,
-        "warmup":0.3,
-        "dropout":False,
-        "train_size": len(data_module.train_dataloader()),
-        "pre_classifier":'relu',
-        "pool_method":'mean',
-        "class_weight": createPositiveWeights("data/data_huggingface.pkl"),
-        'sample_weight': True,
-        "optim":'sgd'
-    }
-    trainer = pl.Trainer(max_epochs=config['n_epochs'], num_sanity_val_steps=10, log_every_n_steps=10, logger=True)
-    trainer.fit(model, data_module)
-
-
     predictions = trainer.predict(m, dm)
     flattened_predictions = np.stack([torch.sigmoid(torch.Tensor(p)) for batch in predictions for p in batch])
     return flattened_predictions
@@ -86,8 +89,10 @@ def dataframe_toDataModule(pd: pd.DataFrame):
 @app.route('/', methods = ['POST'])
 def result():
     message = request.form['message']
-    print(message)
-    print(model)
+    df = string_to_dataframe(message)
+    dm =  dataframe_toDataModule(df)
+    output = predict(model, dm=dm)
+    print(message, output)
     # results = predict(message)
     #Prediction is used here
     #then you resturn a response with the assigned categories
