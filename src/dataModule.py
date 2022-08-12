@@ -19,11 +19,11 @@ class DataModule(pl.LightningDataModule):
             self.val_dataset = sentencesDataset(self.data_val, self.tokenizer)
 
         def train_dataloader(self):
-            return DataLoader(self.train_dataset,batch_size=self.batch_size,num_workers=2,shuffle=False)
+            return DataLoader(self.train_dataset,batch_size=self.batch_size,num_workers=0,shuffle=False)
         def val_dataloader(self):
-            return DataLoader(self.val_dataset,batch_size=self.batch_size,num_workers=1)
+            return DataLoader(self.val_dataset,batch_size=self.batch_size,num_workers=0)
         def predict_dataloader(self):
-            return DataLoader(self.test_dataset,batch_size=self.batch_size,num_workers=1, shuffle=False)
+            return DataLoader(self.test_dataset,batch_size=self.batch_size,num_workers=0, shuffle=False)
         def test_dataloader(self):
-            return DataLoader(self.test_dataset,batch_size=self.batch_size,num_workers=2, shuffle=False)
+            return DataLoader(self.test_dataset,batch_size=self.batch_size,num_workers=0, shuffle=False)
 
