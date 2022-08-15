@@ -19,15 +19,14 @@ tokenizer = RobertaTokenizer.from_pretrained(model_name)
 
 
 def split_data(data_path):
-        data = pd.read_pickle(data_path)
-        data = data.drop(columns=['index'])
-        x_train, x_testAndVal = train_test_split(data, test_size=0.2, shuffle=True)
-        x_test, x_val = train_test_split(x_testAndVal, test_size=0.33,shuffle=True)
-        return x_train, x_test, x_val
+    data = pd.read_pickle(data_path)
+    data = data.drop(columns=['index'])
+    x_train, x_testAndVal = train_test_split(data, test_size=0.2, shuffle=True)
+    x_test, x_val = train_test_split(x_testAndVal, test_size=0.33,shuffle=True)
+    return x_train, x_test, x_val
 
 def createPositiveWeights(data_path):
     df = pd.read_pickle(data_path)
-    categories = ['CP', 'Constructivism', 'Coping', 'ED', 'ER/SR', 'Empowerment', 'Exposure/Habit', 'PERMA']
     labels = df[categories]
     pos = []
     neg = []
@@ -44,10 +43,8 @@ def createPositiveWeights(data_path):
 
     return neg_pos_ratio
 
-
-
 data_train, data_test, data_val = split_data("data/data_huggingface.pkl")
-data_module = DataModule(data_train, data_test, data_val, tokenizer, batch_size=32)
+data_module = DataModule(None , data_train, data_test, data_val, tokenizer, batch_size=32)
 data_module.setup()
 config = {
     "lr": 1.5e-5,
@@ -65,13 +62,14 @@ config = {
     'sample_weight': True,
     "optim":'sgd'
 }
+
 model = SentenceClassifier(config)
 
 trainer = pl.Trainer(max_epochs=config['n_epochs'], num_sanity_val_steps=10, log_every_n_steps=10, logger=True)
 trainer.fit(model, data_module)
 
 def predict(m, dm):
-    predictions = trainer.predict(m, datamodule=dm, ckpt_path="./output/preTrainedModel.ckpt")
+    predictions = trainer.predict(m, datamodule=dm)
     flattened_predictions = np.stack([torch.sigmoid(torch.Tensor(p)) for batch in predictions for p in batch])
     return flattened_predictions
 
@@ -97,7 +95,7 @@ def result():
     # results = predict(message)
     #Prediction is used here
     #then you resturn a response with the assigned categories
-    response = make_response(message, 200)
+    response = make_response(output, 200)
     return response
 
 if __name__ == '__main__':
