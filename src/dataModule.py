@@ -4,11 +4,12 @@ from sentencesDataset import sentencesDataset
 
 class DataModule(pl.LightningDataModule):
 
-        def __init__(self, data_train, data_test, data_val, tokenizer, batch_size = 32, max_token_len = 128):
+        def __init__(self, data_pred, data_train, data_test, data_val, tokenizer, batch_size = 32, max_token_len = 128):
             super().__init__()
             self.data_train = data_train
             self.data_test = data_test
             self.data_val = data_val
+            self.data_pred = data_pred
             self.batch_size = batch_size
             self.max_token_len = max_token_len
             self.tokenizer = tokenizer
@@ -17,13 +18,14 @@ class DataModule(pl.LightningDataModule):
             self.train_dataset = sentencesDataset(self.data_train, self.tokenizer)
             self.test_dataset = sentencesDataset(self.data_test, self.tokenizer)
             self.val_dataset = sentencesDataset(self.data_val, self.tokenizer)
+            self.predict_dataset = sentencesDataset(self.data_pred, self.tokenizer)
 
         def train_dataloader(self):
             return DataLoader(self.train_dataset,batch_size=self.batch_size,num_workers=0,shuffle=False)
         def val_dataloader(self):
             return DataLoader(self.val_dataset,batch_size=self.batch_size,num_workers=0)
         def predict_dataloader(self):
-            return DataLoader(self.test_dataset,batch_size=self.batch_size,num_workers=0, shuffle=False)
+            return DataLoader(self.predict_dataset,batch_size=self.batch_size,num_workers=0, shuffle=False)
         def test_dataloader(self):
             return DataLoader(self.test_dataset,batch_size=self.batch_size,num_workers=0, shuffle=False)
 

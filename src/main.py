@@ -71,7 +71,7 @@ trainer = pl.Trainer(max_epochs=config['n_epochs'], num_sanity_val_steps=10, log
 trainer.fit(model, data_module)
 
 def predict(m, dm):
-    predictions = trainer.predict(m, dm)
+    predictions = trainer.predict(m, datamodule=dm, ckpt_path="./output/preTrainedModel.ckpt")
     flattened_predictions = np.stack([torch.sigmoid(torch.Tensor(p)) for batch in predictions for p in batch])
     return flattened_predictions
 
@@ -82,14 +82,16 @@ def string_to_dataframe(sentence):
     return dataframe
 
 def dataframe_toDataModule(pd: pd.DataFrame):
-    s_data_module = DataModule(data_train= None, data_val=None, data_test = pd, tokenizer=tokenizer)
+    s_data_module = DataModule(data_pred=pd ,data_train= None, data_test = None, data_val=None,tokenizer=tokenizer, batch_size=10)
     s_data_module.setup()
+    return s_data_module
 
 @app.route('/', methods = ['POST'])
 def result():
     message = request.form['message']
     df = string_to_dataframe(message)
     dm =  dataframe_toDataModule(df)
+    print(dm)
     output = predict(model, dm=dm)
     print(message, output)
     # results = predict(message)
@@ -101,3 +103,4 @@ def result():
 if __name__ == '__main__':
     # starting app
     app.run(debug=True,host='0.0.0.0')
+    print("Server is running")
