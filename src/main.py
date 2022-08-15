@@ -1,6 +1,7 @@
 # Create the predict function
 from multiprocessing import freeze_support
-from flask import Flask, jsonify, request, make_response
+from xml.dom.minidom import TypeInfo
+from flask import Flask, request, make_response
 import torch
 import pandas as pd
 import numpy as np
@@ -23,6 +24,7 @@ def split_data(data_path):
     data = data.drop(columns=['index'])
     x_train, x_testAndVal = train_test_split(data, test_size=0.2, shuffle=True)
     x_test, x_val = train_test_split(x_testAndVal, test_size=0.33,shuffle=True)
+    print(x_test, type(x_test))
     return x_train, x_test, x_val
 
 def createPositiveWeights(data_path):
@@ -39,7 +41,6 @@ def createPositiveWeights(data_path):
     for i in range(len(pos)):
         ratio = neg[i]/pos[i]
         neg_pos_ratio.append(ratio)
-    print(neg_pos_ratio)
 
     return neg_pos_ratio
 
@@ -50,7 +51,7 @@ config = {
     "lr": 1.5e-5,
     "batch_size": 10,
     "max_token_len": 128,
-    "n_epochs": 10,
+    "n_epochs": 1,
     "weight_decay":0.001,
     "n_classes":n_categories,
     "warmup":0.3,
@@ -77,6 +78,8 @@ def predict(m, dm):
 def string_to_dataframe(sentence):
     s_nd_array=np.array([["app",sentence, 0, 0, 0, 0, 0, 0, 0, 0 ]])
     dataframe=pd.DataFrame(s_nd_array, columns=['Source', 'Sentence', *categories])
+    print(s_nd_array, dataframe)
+    dataframe.drop(columns=['index'])
     return dataframe
 
 def dataframe_toDataModule(pd: pd.DataFrame):
@@ -89,7 +92,7 @@ def result():
     message = request.form['message']
     df = string_to_dataframe(message)
     dm =  dataframe_toDataModule(df)
-    print(dm)
+    print(dm, type(dm))
     output = predict(model, dm=dm)
     print(message, output)
     # results = predict(message)
