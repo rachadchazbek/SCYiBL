@@ -1,6 +1,5 @@
 # Create the predict function
 from multiprocessing import freeze_support
-import string
 from flask import Flask, jsonify, request, make_response
 import torch
 import pandas as pd
@@ -77,7 +76,7 @@ def predict(m, dm):
     return flattened_predictions
 
 # Code the flask APP
-def string_to_dataframe(sentence: string):
+def string_to_dataframe(sentence):
     s_nd_array=np.array([["app",sentence, 0, 0, 0, 0, 0, 0, 0, 0 ]])
     dataframe=pd.DataFrame(s_nd_array, columns=['Source', 'Sentence', *categories])
     return dataframe
