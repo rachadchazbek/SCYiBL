@@ -66,7 +66,7 @@ config = {
 
 model = SentenceClassifier(config)
 
-trainer = pl.Trainer(max_epochs=config['n_epochs'], num_sanity_val_steps=10, log_every_n_steps=10, logger=True)
+trainer = pl.Trainer(max_epochs=config['n_epochs'], num_sanity_val_steps=10, log_every_n_steps=10, logger=False, checkpoint_callback=False)
 trainer.fit(model, data_module)
 
 def predict(m, dm):
@@ -79,7 +79,6 @@ def string_to_dataframe(sentence):
     s_nd_array=np.array([["app",sentence, 0, 0, 0, 0, 0, 0, 0, 0 ]])
     dataframe=pd.DataFrame(s_nd_array, columns=['Source', 'Sentence', *categories])
     print(s_nd_array, dataframe)
-    dataframe.drop(columns=['index'])
     return dataframe
 
 def dataframe_toDataModule(pd: pd.DataFrame):
