@@ -71,12 +71,12 @@ class SentenceClassifier(pl.LightningModule):
 
     def training_step(self, batch, batch_index):
         loss, outputs = self(**batch)
-        self.log("train loss", loss, prog_bar = True, logger = True)
+        # self.log("train loss", loss, prog_bar = True, logger = True)
         return {"loss": loss, "predictions": outputs, "labels": batch["labels"]}
 
     def validation_step(self, batch, batch_index):
         loss, outputs = self(**batch)
-        self.log("validation loss", loss, prog_bar = True, logger = True)
+        # self.log("validation loss", loss, prog_bar = True, logger = True)
         return {"val loss": loss, "predictions": outputs, "labels": batch["labels"]}
 
     def test_step(self, batch, batch_index):
@@ -84,7 +84,7 @@ class SentenceClassifier(pl.LightningModule):
         attention_mask = batch["attention_mask"]
         labels = batch["labels"]
         loss, outputs = self(input_ids, attention_mask, labels)
-        self.log("test_loss", loss, prog_bar=True, logger=True)
+        # self.log("test_loss", loss, prog_bar=True, logger=True)
         return loss
     
     def predict_step(self, batch, batch_index):
@@ -107,8 +107,8 @@ class SentenceClassifier(pl.LightningModule):
         for i, categorie in enumerate(categories):
             roc_score = auroc(predictions[:, i], labels[:, i].int())
             roc.append(roc_score)
-            self.logger.experiment.add_scalar(f"Train/{categorie}_roc_auc", roc_score, self.current_epoch)
-        self.log("ptl/train_avg_roc", np.mean(roc))
+            # self.logger.experiment.add_scalar(f"Train/{categorie}_roc_auc", roc_score, self.current_epoch)
+        # self.log("ptl/train_avg_roc", np.mean(roc))
 
     def validation_epoch_end(self, outputs):
         labels,predictions,roc =[],[],[]
@@ -125,8 +125,8 @@ class SentenceClassifier(pl.LightningModule):
         for i, categorie in enumerate(categories):
             roc_score = auroc(predictions[:, i], labels[:, i].int())
             roc.append(roc_score)
-            self.logger.experiment.add_scalar(f"Validation/{categorie}_roc_auc", roc_score, self.current_epoch)
-        self.log("ptl/val_avg_roc", np.mean(roc))
+            # self.logger.experiment.add_scalar(f"Validation/{categorie}_roc_auc", roc_score, self.current_epoch)
+        # self.log("ptl/val_avg_roc", np.mean(roc))
 
     def configure_optimizers(self):
         optimizer = AdamW(self.parameters(), lr=self.config['lr'], weight_decay=self.config['weight_decay'])

@@ -75,14 +75,13 @@ trainer = pl.Trainer(
     max_epochs=config['n_epochs'], 
     num_sanity_val_steps=10, 
     log_every_n_steps=10, 
-    logger=True, 
+    logger=False, 
     checkpoint_callback=False, 
 )
 trainer.fit(model, data_module)
 
 
 def predict(m, dm):
-    #trainer.validate(model, dm.predict_dataloader())
     predictions = trainer.predict(m, datamodule=dm)
     flattened_predictions = np.stack([torch.sigmoid(torch.Tensor(p)) for batch in predictions for p in batch])
     return flattened_predictions
