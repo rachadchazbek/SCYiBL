@@ -66,10 +66,17 @@ config = {
 
 model = SentenceClassifier(config)
 
-trainer = pl.Trainer(max_epochs=config['n_epochs'], num_sanity_val_steps=10, log_every_n_steps=10, logger=False, checkpoint_callback=False)
+trainer = pl.Trainer(
+    max_epochs=config['n_epochs'], 
+    num_sanity_val_steps=10, 
+    log_every_n_steps=10, 
+    logger=True, 
+    checkpoint_callback=False, 
+)
 trainer.fit(model, data_module)
 
 def predict(m, dm):
+    trainer.validate(model, dm.predict_dataloader())
     predictions = trainer.predict(m, datamodule=dm)
     flattened_predictions = np.stack([torch.sigmoid(torch.Tensor(p)) for batch in predictions for p in batch])
     return flattened_predictions
@@ -82,8 +89,9 @@ def string_to_dataframe(sentence):
     return dataframe
 
 def dataframe_toDataModule(pd: pd.DataFrame):
-    s_data_module = DataModule(data_pred=pd ,data_train= None, data_test = None, data_val=None,tokenizer=tokenizer, batch_size=10)
-    s_data_module.setup()
+    s_data_module = DataModule(data_pred=pd ,data_train= None, data_test = None, data_val=None,tokenizer=tokenizer, batch_size=1)
+    s_data_module.setup(predict)
+    print(s_data_module.data_pred)
     return s_data_module
 
 @app.route('/', methods = ['POST'])
@@ -92,7 +100,7 @@ def result():
     df = string_to_dataframe(message)
     dm =  dataframe_toDataModule(df)
     print(dm, type(dm))
-    output = predict(model, dm=dm)
+    output = predict(model, dm)
     print(message, output)
     # results = predict(message)
     #Prediction is used here
