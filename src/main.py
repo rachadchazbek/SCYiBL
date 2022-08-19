@@ -76,7 +76,8 @@ trainer = pl.Trainer(
     num_sanity_val_steps=10, 
     log_every_n_steps=10, 
     logger=False, 
-    checkpoint_callback=False, 
+    enable_checkpointing=False,
+    enable_model_summary=None
 )
 trainer.fit(model, data_module)
 
