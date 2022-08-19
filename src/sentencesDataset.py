@@ -20,6 +20,7 @@ class sentencesDataset(Dataset):
         row = self.data.iloc[index]
         sentence = str(row.Sentence)
         labels = row[categories]
+        labels= torch.FloatTensor(labels)
         encoding = self.tokenizer.encode_plus(sentence, 
                                             add_special_tokens=True, 
                                             return_tensors='pt',
@@ -27,7 +28,7 @@ class sentencesDataset(Dataset):
                                             max_length=self.max_token_len, 
                                             padding='max_length',
                                             return_attention_mask=True)
-
+        
         return {'input_ids': encoding.input_ids.flatten(), 
                 'attention_mask': encoding.attention_mask.flatten(), 
-                'labels': torch.FloatTensor(labels)}
+                'labels': labels}
