@@ -1,6 +1,3 @@
-# Create the predict function
-from multiprocessing import freeze_support
-from xml.dom.minidom import TypeInfo
 from flask import Flask, request, make_response
 import torch
 import pandas as pd
@@ -19,7 +16,6 @@ n_categories = len(categories)
 checkpoint_path = './output/preTrainedModel.ckpt'
 tokenizer = RobertaTokenizer.from_pretrained(model_name)
 data_path = "./data/data_huggingface.csv"
-
 
 
 def split_data(data_path):
@@ -74,7 +70,6 @@ model = SentenceClassifier(config)
 trainer = pl.Trainer(
     max_epochs=config['n_epochs'], 
     num_sanity_val_steps=10, 
-    log_every_n_steps=10, 
     logger=False, 
     enable_checkpointing=False,
     enable_model_summary=None
@@ -88,7 +83,6 @@ def predict(m, dm):
     return flattened_predictions
 
 
-# Code the flask APP
 def string_to_dataframe(sentence):
     s_nd_array=np.array([["app", str(sentence), 0, 0, 0, 0, 0, 0, 0, 0]])
     dataframe=pd.DataFrame(s_nd_array, columns=['Source', 'Sentence', *categories])
@@ -109,10 +103,8 @@ def result():
     df = string_to_dataframe(message)
     dm = dataframe_toDataModule(df)
     output = predict(model, dm)
-    print(message, output)
-    # results = predict(message)
-    #Prediction is used here
-    #then you resturn a response with the assigned categories
+    print("Message :", message)
+    print("Output :", output)
     output_json = json.dumps({r[0]: str(round(r[1], 2)) for r in zip(categories, output[0])}, indent=4)
     response = make_response(output_json, 200)
     return response
