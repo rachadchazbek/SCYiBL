@@ -3,7 +3,7 @@ import torch
 import pandas as pd
 import numpy as np
 import json
-from transformers import RobertaTokenizer
+from transformers import RobertaTokenizer, logging
 import pytorch_lightning as pl
 from dataModule import DataModule, DataModulePredict
 from sklearn.model_selection import train_test_split
@@ -64,6 +64,7 @@ config = {
     'sample_weight': True,
     "optim":'sgd'
 }
+logging.set_verbosity_warning()
 
 model = SentenceClassifier(config)
 
