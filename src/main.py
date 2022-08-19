@@ -5,6 +5,7 @@ from flask import Flask, request, make_response
 import torch
 import pandas as pd
 import numpy as np
+import json
 from transformers import RobertaTokenizer
 import pytorch_lightning as pl
 from dataModule import DataModule, DataModulePredict
@@ -113,7 +114,8 @@ def result():
     # results = predict(message)
     #Prediction is used here
     #then you resturn a response with the assigned categories
-    response = make_response(output, 200)
+    output_json = json.dumps({r[0]: str(round(r[1], 2)) for r in zip(categories, output[0])}, indent=4)
+    response = make_response(output_json, 200)
     return response
 
 
