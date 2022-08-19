@@ -18,6 +18,8 @@ categories = ['CP', 'Constructivism', 'Coping', 'ED', 'ER/SR', 'Empowerment', 'E
 n_categories = len(categories)
 checkpoint_path = './output/preTrainedModel.ckpt'
 tokenizer = RobertaTokenizer.from_pretrained(model_name)
+data_path = "./data/data_huggingface.csv"
+
 
 
 def split_data(data_path):
@@ -25,7 +27,6 @@ def split_data(data_path):
     data = data.drop(columns=['index'])
     x_train, x_testAndVal = train_test_split(data, test_size=0.2, shuffle=True)
     x_test, x_val = train_test_split(x_testAndVal, test_size=0.33,shuffle=True)
-    print(x_test, type(x_test))
     return x_train, x_test, x_val
 
 
@@ -47,7 +48,7 @@ def createPositiveWeights(data_path):
     return neg_pos_ratio
 
 
-data_train, data_test, data_val = split_data("../data/data_huggingface.csv")
+data_train, data_test, data_val = split_data(data_path)
 data_module = DataModule(data_pred=None, data_train=data_train, data_test=data_test, data_val=data_val,
                          tokenizer=tokenizer, batch_size=32)
 data_module.setup()
@@ -63,7 +64,7 @@ config = {
     "train_size": len(data_module.train_dataloader()),
     "pre_classifier": 'relu',
     "pool_method": 'mean',
-    "class_weight": createPositiveWeights("../data/data_huggingface.csv"),
+    "class_weight": createPositiveWeights(data_path),
     'sample_weight': True,
     "optim":'sgd'
 }
@@ -91,7 +92,6 @@ def predict(m, dm):
 def string_to_dataframe(sentence):
     s_nd_array=np.array([["app", str(sentence), 0, 0, 0, 0, 0, 0, 0, 0]])
     dataframe=pd.DataFrame(s_nd_array, columns=['Source', 'Sentence', *categories])
-    print(s_nd_array, dataframe)
     return dataframe
 
 
@@ -108,7 +108,6 @@ def result():
     message = request.form['message']
     df = string_to_dataframe(message)
     dm = dataframe_toDataModule(df)
-    print(dm, type(dm))
     output = predict(model, dm)
     print(message, output)
     # results = predict(message)
