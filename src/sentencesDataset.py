@@ -19,8 +19,7 @@ class sentencesDataset(Dataset):
     def __getitem__(self, index):
         row = self.data.iloc[index]
         sentence = str(row.Sentence)
-        labels = row[categories]
-        labels= torch.FloatTensor(labels)
+        labels = torch.FloatTensor(row[categories])
         encoding = self.tokenizer.encode_plus(sentence, 
                                             add_special_tokens=True, 
                                             return_tensors='pt',
@@ -32,3 +31,29 @@ class sentencesDataset(Dataset):
         return {'input_ids': encoding.input_ids.flatten(), 
                 'attention_mask': encoding.attention_mask.flatten(), 
                 'labels': labels}
+
+
+class sentencesDatasetPredict(Dataset):
+
+    def __init__(self, data: pd.DataFrame, tokenizer: RobertaTokenizer, max_token_len: int = 30):
+        self.data = data
+        self.tokenizer = tokenizer
+        self.max_token_len = max_token_len
+
+    def __len__(self):
+        return len(self.data)
+
+    def __getitem__(self, index):
+        row = self.data.iloc[index]
+        encoding = self.tokenizer.encode_plus(str(row.Sentence),
+                                              add_special_tokens=True,
+                                              return_tensors='pt',
+                                              truncation=True,
+                                              max_length=self.max_token_len,
+                                              padding='max_length',
+                                              return_attention_mask=True)
+
+        return {'input_ids': encoding.input_ids.flatten(),
+                'attention_mask': encoding.attention_mask.flatten()}
+
+

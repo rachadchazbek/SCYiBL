@@ -1,6 +1,6 @@
 import pytorch_lightning as pl
 from torch.utils.data import DataLoader
-from sentencesDataset import sentencesDataset
+from sentencesDataset import sentencesDataset, sentencesDatasetPredict
 
 class DataModule(pl.LightningDataModule):
 
@@ -28,4 +28,36 @@ class DataModule(pl.LightningDataModule):
             return DataLoader(self.predict_dataset,batch_size=self.batch_size,num_workers=0, shuffle=False)
         def test_dataloader(self):
             return DataLoader(self.test_dataset,batch_size=self.batch_size,num_workers=0, shuffle=False)
+
+
+class DataModulePredict(pl.LightningDataModule):
+
+    def __init__(self, data_pred, data_train, data_test, data_val, tokenizer, batch_size=32, max_token_len=128):
+        super().__init__()
+        self.data_train = data_train
+        self.data_test = data_test
+        self.data_val = data_val
+        self.data_pred = data_pred
+        self.batch_size = batch_size
+        self.max_token_len = max_token_len
+        self.tokenizer = tokenizer
+
+    def setup(self, stage=None):
+        self.train_dataset = sentencesDatasetPredict(self.data_train, self.tokenizer)
+        self.test_dataset = sentencesDatasetPredict(self.data_test, self.tokenizer)
+        self.val_dataset = sentencesDatasetPredict(self.data_val, self.tokenizer)
+        self.predict_dataset = sentencesDatasetPredict(self.data_pred, self.tokenizer)
+
+    def train_dataloader(self):
+        return DataLoader(self.train_dataset, batch_size=self.batch_size, num_workers=0, shuffle=False)
+
+    def val_dataloader(self):
+        return DataLoader(self.val_dataset, batch_size=self.batch_size, num_workers=0)
+
+    def predict_dataloader(self):
+        return DataLoader(self.predict_dataset, batch_size=self.batch_size, num_workers=0, shuffle=False)
+
+    def test_dataloader(self):
+        return DataLoader(self.test_dataset, batch_size=self.batch_size, num_workers=0, shuffle=False)
+
 

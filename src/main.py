@@ -7,7 +7,7 @@ import pandas as pd
 import numpy as np
 from transformers import RobertaTokenizer
 import pytorch_lightning as pl
-from dataModule import DataModule
+from dataModule import DataModule, DataModulePredict
 from sklearn.model_selection import train_test_split
 from sentenceClassifier import SentenceClassifier
 
@@ -20,15 +20,16 @@ tokenizer = RobertaTokenizer.from_pretrained(model_name)
 
 
 def split_data(data_path):
-    data = pd.read_pickle(data_path)
+    data = pd.read_csv(data_path)
     data = data.drop(columns=['index'])
     x_train, x_testAndVal = train_test_split(data, test_size=0.2, shuffle=True)
     x_test, x_val = train_test_split(x_testAndVal, test_size=0.33,shuffle=True)
     print(x_test, type(x_test))
     return x_train, x_test, x_val
 
+
 def createPositiveWeights(data_path):
-    df = pd.read_pickle(data_path)
+    df = pd.read_csv(data_path)
     labels = df[categories]
     pos = []
     neg = []
@@ -44,22 +45,24 @@ def createPositiveWeights(data_path):
 
     return neg_pos_ratio
 
-data_train, data_test, data_val = split_data("data/data_huggingface.pkl")
-data_module = DataModule(None , data_train, data_test, data_val, tokenizer, batch_size=32)
+
+data_train, data_test, data_val = split_data("../data/data_huggingface.csv")
+data_module = DataModule(data_pred=None, data_train=data_train, data_test=data_test, data_val=data_val,
+                         tokenizer=tokenizer, batch_size=32)
 data_module.setup()
 config = {
     "lr": 1.5e-5,
     "batch_size": 10,
     "max_token_len": 128,
-    "n_epochs": 1,
-    "weight_decay":0.001,
-    "n_classes":n_categories,
-    "warmup":0.3,
-    "dropout":False,
+    "n_epochs": 0,
+    "weight_decay": 0.001,
+    "n_classes": n_categories,
+    "warmup": 0.3,
+    "dropout": False,
     "train_size": len(data_module.train_dataloader()),
-    "pre_classifier":'relu',
-    "pool_method":'mean',
-    "class_weight": createPositiveWeights("data/data_huggingface.pkl"),
+    "pre_classifier": 'relu',
+    "pool_method": 'mean',
+    "class_weight": createPositiveWeights("../data/data_huggingface.csv"),
     'sample_weight': True,
     "optim":'sgd'
 }
@@ -75,30 +78,35 @@ trainer = pl.Trainer(
 )
 trainer.fit(model, data_module)
 
+
 def predict(m, dm):
-    trainer.validate(model, dm.predict_dataloader())
+    #trainer.validate(model, dm.predict_dataloader())
     predictions = trainer.predict(m, datamodule=dm)
     flattened_predictions = np.stack([torch.sigmoid(torch.Tensor(p)) for batch in predictions for p in batch])
     return flattened_predictions
 
+
 # Code the flask APP
 def string_to_dataframe(sentence):
-    s_nd_array=np.array([["app",sentence, 0, 0, 0, 0, 0, 0, 0, 0 ]])
+    s_nd_array=np.array([["app", str(sentence), 0, 0, 0, 0, 0, 0, 0, 0]])
     dataframe=pd.DataFrame(s_nd_array, columns=['Source', 'Sentence', *categories])
     print(s_nd_array, dataframe)
     return dataframe
 
+
 def dataframe_toDataModule(pd: pd.DataFrame):
-    s_data_module = DataModule(data_pred=pd ,data_train= None, data_test = None, data_val=None,tokenizer=tokenizer, batch_size=1)
-    s_data_module.setup(predict)
+    s_data_module = DataModulePredict(data_pred=pd, data_train=None, data_test=None, data_val=None,
+                               tokenizer=tokenizer, batch_size=1)
+    s_data_module.setup()
     print(s_data_module.data_pred)
     return s_data_module
+
 
 @app.route('/', methods = ['POST'])
 def result():
     message = request.form['message']
     df = string_to_dataframe(message)
-    dm =  dataframe_toDataModule(df)
+    dm = dataframe_toDataModule(df)
     print(dm, type(dm))
     output = predict(model, dm)
     print(message, output)
@@ -108,7 +116,8 @@ def result():
     response = make_response(output, 200)
     return response
 
+
 if __name__ == '__main__':
     # starting app
-    app.run(debug=True,host='0.0.0.0')
+    app.run(debug=True, host='0.0.0.0', port=5010)
     print("Server is running")
