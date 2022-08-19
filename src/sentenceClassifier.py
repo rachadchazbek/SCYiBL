@@ -4,7 +4,7 @@ import torch.nn as nn
 import pytorch_lightning as pl
 import numpy as np
 from torchmetrics.functional.classification import auroc
-from transformers import RobertaModel, AdamW, get_linear_schedule_with_warmup
+from transformers import RobertaModel, AdamW, get_linear_schedule_with_warmup, logging
 
 categories = ['CP', 'Constructivism', 'Coping', 'ED', 'ER/SR', 'Empowerment', 'Exposure/Habit', 'PERMA']
 n_categories = len(categories)
@@ -15,6 +15,7 @@ class SentenceClassifier(pl.LightningModule):
     def __init__(self, config: dict):
         super().__init__()
         self.config = config
+        logging.set_verbosity_error()
         self.bert = RobertaModel.from_pretrained(model_name, return_dict = True)
         if self.config['pre_classifier'] is not None:
             self.pre_classifier = nn.Linear(self.bert.config.hidden_size, 768)
