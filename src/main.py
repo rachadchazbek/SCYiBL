@@ -9,7 +9,7 @@ from transformers import RobertaTokenizer
 import pytorch_lightning as pl
 from dataModule import DataModule
 from sklearn.model_selection import train_test_split
-from evaluate import SentenceClassifier
+from sentenceClassifier import SentenceClassifier
 
 app = Flask(__name__)
 model_name = 'roberta-base'
