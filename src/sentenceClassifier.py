@@ -130,7 +130,7 @@ class SentenceClassifier(pl.LightningModule):
         # self.log("ptl/val_avg_roc", np.mean(roc))
 
     def configure_optimizers(self):
-        optimizer = AdamW(self.parameters(), lr=self.config['lr'], weight_decay=self.config['weight_decay'])
+        optimizer = AdamW(self.parameters(), lr=self.config['lr'], weight_decay=self.config['weight_decay'], no_deprecation_warning=True)
         total_steps = self.config['train_size']/self.config['batch_size']
         warmup_steps = math.floor(total_steps * self.config['warmup'])
         scheduler = get_linear_schedule_with_warmup(optimizer, warmup_steps, total_steps)
