@@ -10,7 +10,7 @@ from sklearn.model_selection import train_test_split
 import numpy as np
 import pytorch_lightning as pl
 import seaborn as sns
-from transformers import RobertaTokenizer, RobertaModel, DistilBertModel, AdamW, DistilBertTokenizer, get_linear_schedule_with_warmup
+from transformers import RobertaTokenizer, RobertaModel, AdamW, get_linear_schedule_with_warmup
 from sklearn.model_selection import train_test_split
 from sklearn import metrics
 import pandas as pd 
