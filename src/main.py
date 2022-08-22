@@ -93,7 +93,6 @@ def dataframe_toDataModule(pd: pd.DataFrame):
     s_data_module = DataModulePredict(data_pred=pd, data_train=None, data_test=None, data_val=None,
                                tokenizer=tokenizer, batch_size=1)
     s_data_module.setup()
-    print(s_data_module.data_pred)
     return s_data_module
 
 
