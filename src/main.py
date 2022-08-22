@@ -9,11 +9,11 @@ from dataModule import DataModule, DataModulePredict
 from sklearn.model_selection import train_test_split
 from sentenceClassifier import SentenceClassifier
 
+
 app = Flask(__name__)
 model_name = 'roberta-base'
 categories = ['CP', 'Constructivism', 'Coping', 'ED', 'ER/SR', 'Empowerment', 'Exposure/Habit', 'PERMA']
 n_categories = len(categories)
-checkpoint_path = './output/preTrainedModel.ckpt'
 tokenizer = RobertaTokenizer.from_pretrained(model_name)
 data_path = "./data/data_huggingface.csv"
 
