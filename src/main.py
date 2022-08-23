@@ -1,10 +1,11 @@
-from flask import Flask, request, make_response
+print("IN main")
 import torch
 import pandas as pd
 import numpy as np
 import json
-from transformers import RobertaTokenizer
 import pytorch_lightning as pl
+from flask import Flask, request, make_response
+from transformers import RobertaTokenizer
 from dataModule import DataModule, DataModulePredict
 from sklearn.model_selection import train_test_split
 from sentenceClassifier import SentenceClassifier

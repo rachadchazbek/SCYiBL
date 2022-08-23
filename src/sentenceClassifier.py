@@ -2,7 +2,6 @@ import math
 import torch
 import torch.nn as nn
 import pytorch_lightning as pl
-import numpy as np
 from torchmetrics.functional.classification import auroc
 from transformers import RobertaModel, AdamW, get_linear_schedule_with_warmup, logging
 
