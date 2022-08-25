@@ -1,4 +1,8 @@
 print("IN main")
+import os
+import sys
+sys.path.insert(1, os.path.dirname(os.path.realpath(__file__)))
+
 import torch
 import pandas as pd
 import numpy as np
@@ -9,7 +13,6 @@ from transformers import RobertaTokenizer
 from dataModule import DataModule, DataModulePredict
 from sklearn.model_selection import train_test_split
 from sentenceClassifier import SentenceClassifier
-
 
 app = Flask(__name__)
 model_name = 'roberta-base'
