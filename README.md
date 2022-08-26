@@ -13,6 +13,16 @@ Content-Type: application/json
 With body: 
 { "message": {message} }
 
+## Folder structure
+
+  .
+  ├── data
+  ├── src
+  ├── requirements.txt
+  ├── Dockerfile
+  ├── docker-compose.yml
+  ├── README.md
+
 
 
 
