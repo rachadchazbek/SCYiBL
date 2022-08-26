@@ -13,5 +13,6 @@ Content-Type: application/json
 With body: 
 { "message": {message} }
 
+ <a href="https://github.com/rachadchazbek"><img src="https://img.shields.io/github/followers/rachadchazbek?style=social" /></a>
 
-https://img.shields.io/github/followers/rachadchazbek?style=social
+
