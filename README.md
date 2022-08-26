@@ -14,16 +14,22 @@ With body:
 { "message": {message} }
 
 ## Folder structure
-
+```
   .
   ├── data
-  ├── src
+      ├── data_huggingface.csv        # dataset
+  ├── src                             # Source files
+      ├── main.py                     # Flask application + predict function
+      ├── sentenceClassifier.py
+      ├── sentenceDataset.py
+      ├── dataModule.py
   ├── requirements.txt
-  ├── Dockerfile
+  ├── Dockerfile                      # Docker file to build the Docker image
   ├── docker-compose.yml
+  ├── docker-compose.debug.yml
   ├── README.md
 
-
+```
 
 
 
