@@ -56,7 +56,7 @@ config = {
     "lr": 1.5e-5,
     "batch_size": 10,
     "max_token_len": 128,
-    "n_epochs": 0,
+    "n_epochs": 10,
     "weight_decay": 0.001,
     "n_classes": n_categories,
     "warmup": 0.3,
