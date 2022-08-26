@@ -12,6 +12,7 @@ Depending on your machine, this process might take a good amount of time, so be 
 ### To make a prediction: 
 ## POST - `127.0.0.1:5010` - Makes a prediction
 Headers: NA
+
 Content-Type: application/json
 
 With body: 
