@@ -4,7 +4,7 @@
 `docker build -t scyiblnlp . `
 
 ### To run the container
-`docker run -d -p 5010:5010 scyiblnlp`
+`docker run -d -p 5010:5010 --name scyiblnlp scyiblnlp`
 
 
 Depending on your machine, this process might take a good amount of time, so be patient.
