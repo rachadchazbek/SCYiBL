@@ -3,7 +3,10 @@
 ### To build the Docker image:
 `docker build -t scyiblnlp . `
 
-Then proceed by running the Docker image created in The Docker Desktop Dashboard.
+### To run the container
+`docker run -d -p 5010:5010 scyiblnlp`
+
+
 Depending on your machine, this process might take a good amount of time, so be patient.
 
 ### To make a prediction: 
