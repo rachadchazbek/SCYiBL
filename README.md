@@ -1,6 +1,14 @@
 # SCYiBL-NLP
 
-To build the Docker image:
+### To build the Docker image:
 `docker build -t scyiblnlp . `
 
 Then proceed by running the Docker image created in The Docker Desktop Dashboard.
+Depending on your machine, this process might take a good amount of time, so be patient.
+
+### To make a prediction: 
+## POST - `127.0.0.1:5010` - Makes a prediction
+Content-Type: application/json
+
+With body: 
+{ "message": {message} }
