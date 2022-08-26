@@ -13,7 +13,7 @@ Content-Type: application/json
 With body: 
 { "message": {message} }
 
-## Folder structure
+## Folders structure
 ```
   .
   ├── data
