@@ -12,3 +12,6 @@ Content-Type: application/json
 
 With body: 
 { "message": {message} }
+
+
+https://img.shields.io/github/followers/rachadchazbek?style=social
