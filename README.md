@@ -1,5 +1,7 @@
 # SCYiBL-NLP
 
+SCYiBL-NLP is a Natural Language Processing method based on Deep Learning that categorizes sentences into cognitive theories (ex: constructivism, coping).
+
 ### To build the Docker image:
 `docker build -t scyiblnlp . `
 
