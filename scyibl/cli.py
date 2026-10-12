@@ -1,0 +1,72 @@
+"""Command-line entry point: ``scyibl config check``."""
+
+from __future__ import annotations
+
+import argparse
+import sys
+from collections.abc import Sequence
+from pathlib import Path
+
+from scyibl.config.settings import (
+    DEFAULT_ENV_FILE,
+    ConfigError,
+    RuntimeConfig,
+    load_runtime_config,
+    required_secrets,
+)
+
+
+def _mask(value: str) -> str:
+    return "set (****" + value[-4:] + ")" if len(value) >= 12 else "set"
+
+
+def _render(cfg: RuntimeConfig) -> str:
+    app = cfg.app
+    lines = [f"Config OK: {cfg.source}", "", "Agents:"]
+    for name, agent in app.agents.items():
+        state = "" if agent.enabled else "  (disabled)"
+        lines.append(f"  {name:<12} {agent.model}{state}")
+    lines += [
+        "",
+        "Retrieval:",
+        f"  embed        {app.retrieval.embed_model}",
+        f"  rerank       {app.retrieval.rerank_model or '-'}",
+        "",
+        "Escalation:",
+        f"  min_confidence={app.escalation.min_confidence} "
+        f"ambiguity_band={list(app.escalation.ambiguity_band)} "
+        f"max_depth={app.escalation.max_depth} "
+        f"max_cost_usd={app.escalation.max_cost_usd_per_request}",
+        "",
+        "Secrets:",
+    ]
+    needed = required_secrets(app)
+    for name in sorted(set(needed) | set(cfg.secrets)):
+        secret = cfg.secret(name)
+        status = _mask(secret.get_secret_value()) if secret else "missing"
+        role = needed.get(name, "optional")
+        lines.append(f"  {name:<32} {status:<16} {role}")
+    return "\n".join(lines)
+
+
+def main(argv: Sequence[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(prog="scyibl")
+    sub = parser.add_subparsers(dest="command", required=True)
+    config_cmd = sub.add_parser("config", help="configuration utilities")
+    config_sub = config_cmd.add_subparsers(dest="action", required=True)
+    check = config_sub.add_parser("check", help="validate config and required secrets")
+    check.add_argument("--config", type=Path, default=None, help="path to agents.yaml")
+    check.add_argument("--env-file", type=Path, default=DEFAULT_ENV_FILE, help="path to .env")
+
+    args = parser.parse_args(argv)
+    try:
+        cfg = load_runtime_config(config_path=args.config, env_file=args.env_file)
+    except ConfigError as exc:
+        print(exc, file=sys.stderr)
+        return 1
+    print(_render(cfg))
+    return 0
+
+
+if __name__ == "__main__":  # pragma: no cover
+    sys.exit(main())
