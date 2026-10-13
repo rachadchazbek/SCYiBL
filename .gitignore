@@ -1,4 +1,4 @@
-/lightning_logs
+lightning_logs/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -152,3 +152,31 @@ lightning_logs/version_21/events.out.tfevents.1657569059.Theo-Laptop.4960.0
 # Mac files
 .DS_Store
 lightning_logs/version_55/checkpoints/epoch=3-step=164.ckpt
+
+# Virtual environments / tooling
+.venv/
+.mypy_cache/
+.ruff_cache/
+
+# Secrets: never commit (see .env.example)
+.env
+.env.*
+!.env.example
+secrets/
+
+# Data and model artifacts live in private storage (issue #16)
+data/
+legacy/data/
+*.csv
+*.tsv
+*.parquet
+*.xlsx
+*.pkl
+*.pickle
+*.ckpt
+*.pt
+*.safetensors
+*.jsonl
+!tests/fixtures/**
+outputs/
+reports/raw/

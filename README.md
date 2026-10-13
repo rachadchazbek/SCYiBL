@@ -1,53 +1,37 @@
-# SCYiBL-NLP
+# SCYiBL
 
-SCYiBL-NLP is a Natural Language Processing method based on Deep Learning that categorizes sentences into cognitive theories (ex: constructivism, coping).
+SCYiBL classifies journaling sentences into eight therapeutic frameworks (multi-label):
+CP, Constructivism, Coping, ED, ER/SR, Empowerment, Exposure/Habit and PERMA.
 
-### To build the Docker image:
-`docker build -t scyiblnlp . `
+> **Status: rewrite in progress.** The 2022 RoBERTa service lives in [`legacy/`](legacy/README.md).
+> The new version is a configurable multi-agent service (router → classifier → adjudicator,
+> with a safety agent). See the [epic #15](https://github.com/rachadchazbek/scyibl/issues/15).
 
-### To run the container
-`docker run -d -p 5010:5010 --name scyiblnlp scyiblnlp`
+## Development
 
+Requires Python 3.12+ and [uv](https://docs.astral.sh/uv/).
 
-Depending on your machine, this process might take a good amount of time, so be patient.
-
-### To make a prediction: 
-## POST - `127.0.0.1:5010` - Makes a prediction
-Headers: NA
-
-Content-Type: application/json
-
-With body: 
-{ "message": {message} }
-
-## Folders structure
-```
-  .
-  ├── data
-      ├── data_huggingface.csv        # dataset
-  ├── src                             # Source files
-      ├── main.py                     # Flask application + predict function
-      ├── sentenceClassifier.py
-      ├── sentenceDataset.py
-      ├── dataModule.py
-  ├── requirements.txt
-  ├── Dockerfile                      # Docker file to build the Docker image
-  ├── docker-compose.yml
-  ├── docker-compose.debug.yml
-  ├── README.md
-
+```bash
+uv sync                          # install runtime + dev dependencies
+cp .env.example .env             # then fill in COHERE_API_KEY (never commit .env)
+uv run scyibl config check       # validate config/agents.yaml and required secrets
+uv run pytest                    # tests run offline, without API keys
+uv run pre-commit install        # lint/format + blocks data and .env files on commit
 ```
 
+## Configuration
 
+| What | Where |
+|---|---|
+| Models per agent, escalation thresholds, retrieval, alerts | [`config/agents.yaml`](config/agents.yaml) |
+| Secrets (provider API keys, dataset token, alert credentials) | Environment variables or a local `.env` ([`.env.example`](.env.example)) |
+| Alternative config file | `SCYIBL_CONFIG=path/to/agents.yaml` |
 
+Models are written as `provider/model`, for example `cohere/command-a-03-2025`. Only the secrets
+needed by the active configuration are required, so switching provider or model is a config-only change.
 
+## Data
 
-
-## Contributors 
- <a href="https://github.com/rachadchazbek"><img src="https://img.shields.io/github/followers/rachadchazbek?style=social" /></a>
- <a href="https://github.com/theobadra"><img src="https://img.shields.io/github/followers/theobadra?style=social" /></a>
- <a href="https://github.com/benjamindeleener"><img src="https://img.shields.io/github/followers/benjamindeleener?style=social" /></a>
-
-
-
-
+The dataset is **not** in this repository. It contains mental-health journaling sentences and
+lives in private, access-controlled storage (issue #16). Data and model files are blocked by
+pre-commit and CI.

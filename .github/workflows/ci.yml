@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+          cache-dependency-glob: |
+            pyproject.toml
+            uv.lock
+      - name: Set up Python
+        run: uv python install 3.12
+      - name: Install
+        run: uv sync  # switch to --locked once uv.lock is committed
+      - name: Lint
+        run: uv run ruff check . && uv run ruff format --check .
+      - name: Type-check
+        run: uv run mypy
+      - name: Tests (no network, no API keys)
+        run: uv run pytest --cov=scyibl --cov-report=term-missing
+      - name: Legacy code still compiles
+        run: python -m py_compile legacy/src/*.py
+      - name: No data or secret files in the tree
+        run: |
+          if git ls-files | grep -Ev '^tests/fixtures/' | grep -Ei '\.(csv|tsv|parquet|xlsx|pkl|pickle|ckpt|pt|safetensors|jsonl)$|(^|/)\.env$'; then
+            echo "Data or secret files are tracked. Remove them (see issue #16)."; exit 1
+          fi
