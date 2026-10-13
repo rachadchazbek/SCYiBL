@@ -24,9 +24,10 @@ from pathlib import Path
 from typing import Any
 
 from scyibl.config.settings import load_runtime_config
-from scyibl.graph.build import build_graph, run_graph
+from scyibl.graph.build import build_graph
 from scyibl.llm.base import LLMClient, LLMError
 from scyibl.llm.fake import ChatCall, FakeLLMClient
+from scyibl.schema import ClassificationResult
 from scyibl.taxonomy import Category
 
 # (invented sentence, labels a human would likely expect; provisional, see taxonomy.py)
@@ -79,6 +80,10 @@ def _fake_responder(call: ChatCall) -> dict[str, Any]:
             score = 0.9 if not (unsure and first_pass) else 0.55
         labels[category.value] = {"present": score >= 0.5, "score": score, "rationale": "fake"}
     return {"labels": labels}
+
+
+def _median(values: list[float]) -> float | None:
+    return round(statistics.median(values), 1) if values else None
 
 
 def _cosine(a: list[float], b: list[float]) -> float:
@@ -148,28 +153,41 @@ async def run(dry_run: bool, limit: int, delay_s: float, out_dir: Path) -> dict[
     for i, (sentence, expected) in enumerate(SENTENCES[:limit], start=1):
         if i > 1 and delay_s:
             await asyncio.sleep(delay_s)  # stay under trial-key rate limits
+        rid = f"spike-{i}"
+        config = {"recursion_limit": app.graph.recursion_limit, "configurable": {"thread_id": rid}}
         try:
-            result = await run_graph(graph, app, sentence, request_id=f"spike-{i}")
+            state = await graph.ainvoke({"request_id": rid, "message": sentence}, config=config)
         except Exception as exc:  # record and continue: the spike measures failures too
             rows.append({"id": i, "sentence": sentence, "error": f"{type(exc).__name__}: {exc}"})
             print(f"[{i:>2}] ERROR {type(exc).__name__}: {exc}", file=sys.stderr)
             continue
-        overlap = sorted(set(result.predicted) & set(expected))
+        result: ClassificationResult = state["result"]
+        first = ClassificationResult.label_view(state["first_pass"])
+        first_predicted = [k for k, v in first.items() if v.score >= 0.5]
+        final, exp = set(result.predicted), set(expected)
         rows.append(
             {
                 "id": i,
                 "sentence": sentence,
                 "expected": expected,
+                "first_pass_predicted": first_predicted,
                 "predicted": result.predicted,
-                "overlap": overlap,
+                "overlap": sorted(final & exp),
+                "exact_match": final == exp,
+                "extra_labels": sorted(final - exp),
+                "missing_labels": sorted(exp - final),
+                "adjudicator_added": sorted(final - set(first_predicted)),
+                "adjudicator_removed": sorted(set(first_predicted) - final),
                 "confidence": result.confidence,
                 "escalated": result.escalated,
                 "escalation_reasons": result.escalation_reasons,
                 "models": result.models,
                 "latency_ms": result.latency_ms,
+                "node_latency_ms": {t.node: t.latency_ms for t in state.get("trace", [])},
                 "input_tokens": result.input_tokens,
                 "output_tokens": result.output_tokens,
                 "cost_usd": result.cost_usd,
+                "first_pass_scores": {k: v.score for k, v in first.items()},
                 "labels": {k: v.model_dump() for k, v in result.labels.items()},
             }
         )
@@ -185,6 +203,13 @@ async def run(dry_run: bool, limit: int, delay_s: float, out_dir: Path) -> dict[
         "schema_valid_rate": round(len(ok) / len(rows), 3) if rows else 0.0,
         "escalated": sum(r["escalated"] for r in ok),
         "with_expected_label": sum(bool(r["overlap"]) for r in ok),
+        "exact_match": sum(r["exact_match"] for r in ok),
+        "extra_labels": sum(len(r["extra_labels"]) for r in ok),
+        "missing_labels": sum(len(r["missing_labels"]) for r in ok),
+        "adjudicator_added": sum(len(r["adjudicator_added"]) for r in ok),
+        "adjudicator_removed": sum(len(r["adjudicator_removed"]) for r in ok),
+        "latency_ms_p50_single_pass": _median([r["latency_ms"] for r in ok if not r["escalated"]]),
+        "latency_ms_p50_escalated": _median([r["latency_ms"] for r in ok if r["escalated"]]),
         "latency_ms_p50": statistics.median(latencies) if latencies else None,
         "latency_ms_max": latencies[-1] if latencies else None,
         "input_tokens": sum(r["input_tokens"] for r in ok),
@@ -203,7 +228,7 @@ async def run(dry_run: bool, limit: int, delay_s: float, out_dir: Path) -> dict[
 
 
 def _print(report: dict[str, Any]) -> None:
-    print(f"\n{'#':>2}  {'escalated':<9} {'latency':>8}  predicted  |  expected")
+    print(f"\n{'#':>2}  {'escalated':<9} {'latency':>8}  first pass -> final  |  expected")
     for r in report["rows"]:
         if "error" in r:
             print(f"{r['id']:>2}  ERROR  {r['error'][:90]}")
@@ -211,7 +236,8 @@ def _print(report: dict[str, Any]) -> None:
         esc = "yes" if r["escalated"] else "no"
         print(
             f"{r['id']:>2}  {esc:<9} {r['latency_ms']:>6.0f}ms  "
-            f"{', '.join(r['predicted']) or '-'}  |  {', '.join(r['expected'])}"
+            f"{', '.join(r['first_pass_predicted']) or '-'} -> {', '.join(r['predicted']) or '-'}"
+            f"  |  {', '.join(r['expected'])}"
         )
     print("\nSummary (paste this in issue #1):")
     print(json.dumps({"summary": report["summary"], "retrieval": report["retrieval"]}, indent=2))

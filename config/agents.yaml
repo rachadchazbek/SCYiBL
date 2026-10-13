@@ -33,7 +33,7 @@ retrieval:
   candidates: 30
 
 escalation:
-  min_confidence: 0.7
+  min_confidence: 0.4      # interim, from spike #1 (0.7 escalated 8/10); calibrate on val split (#11)
   ambiguity_band: [0.4, 0.6]
   max_depth: 2
   max_cost_usd_per_request: 0.02
