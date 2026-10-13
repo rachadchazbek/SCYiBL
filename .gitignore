@@ -180,3 +180,4 @@ legacy/data/
 !tests/fixtures/**
 outputs/
 reports/raw/
+reports/spike/

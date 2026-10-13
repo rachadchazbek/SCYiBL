@@ -55,6 +55,9 @@ class AgentConfig(_Strict):
     timeout_s: float = Field(default=30.0, gt=0)
     max_retries: int = Field(default=2, ge=0, le=10)
     few_shot_k: int | None = Field(default=None, ge=0, le=50)
+    thinking_budget: int | None = Field(
+        default=None, ge=0, description="Reasoning-token budget for reasoning models (Cohere)"
+    )
 
     _parse_model = field_validator("model", mode="before")(_to_model_ref)
 
@@ -118,6 +121,22 @@ class AlertsConfig(_Strict):
     google_sheet: SheetAlertConfig = SheetAlertConfig()
 
 
+class GraphConfig(_Strict):
+    checkpointer: Literal["none", "memory"] = Field(
+        default="none",
+        description="'memory' keeps graph state in RAM per thread; nothing is persisted to disk",
+    )
+    recursion_limit: int = Field(default=25, gt=0, le=200)
+    max_message_chars: int = Field(default=2000, gt=0)
+
+
+class ModelPrice(_Strict):
+    """USD per million tokens. Used for the per-request cost budget."""
+
+    input_per_mtok: float = Field(ge=0)
+    output_per_mtok: float = Field(ge=0)
+
+
 class AppConfig(_Strict):
     providers: dict[str, ProviderConfig]
     agents: dict[str, AgentConfig]
@@ -126,6 +145,15 @@ class AppConfig(_Strict):
     dataset: DatasetConfig
     clients: ClientsConfig = ClientsConfig()
     alerts: AlertsConfig = AlertsConfig()
+    graph: GraphConfig = GraphConfig()
+    pricing: dict[str, ModelPrice] = Field(
+        default_factory=dict, description="Keyed by 'provider/model'; empty = cost unknown"
+    )
+
+    @field_validator("pricing")
+    @classmethod
+    def _pricing_keys_are_model_refs(cls, value: dict[str, ModelPrice]) -> dict[str, ModelPrice]:
+        return {str(ModelRef.parse(key)): price for key, price in value.items()}
 
     @field_validator("providers")
     @classmethod
@@ -159,6 +187,9 @@ class AppConfig(_Strict):
         if self.retrieval.rerank_model is not None:
             refs.append(("retrieval.rerank_model", self.retrieval.rerank_model))
         return refs
+
+    def price_for(self, model: ModelRef) -> ModelPrice | None:
+        return self.pricing.get(str(model))
 
     def providers_in_use(self) -> set[str]:
         return {ref.provider for _, ref in self.model_refs()}
