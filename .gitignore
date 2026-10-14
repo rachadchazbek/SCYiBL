@@ -166,6 +166,7 @@ secrets/
 
 # Data and model artifacts live in private storage (issue #16)
 data/
+!scyibl/data/
 legacy/data/
 *.csv
 *.tsv
