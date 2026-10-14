@@ -15,6 +15,7 @@ uv run mypy                                      # strict type-check
 uv run scyibl config check                       # validate config/agents.yaml + secrets
 uv run python scripts/spike_cohere.py --dry-run  # spike with the fake LLM
 uv run python scripts/spike_cohere.py            # live Cohere calls (invented sentences only)
+uv run scyibl data prepare --input RAW.csv --out-dir DIR  # owner only; DIR outside the repo
 ```
 CI (`.github/workflows/ci.yml`) runs lint, mypy, pytest and a data-file guard on every PR.
 After changing dependencies, run `uv lock` and commit `uv.lock`.
@@ -32,6 +33,10 @@ After changing dependencies, run `uv lock` and commit `uv.lock`.
 - **Schemas**: `scyibl/schema.py`. The schema sent to Cohere must not use `minimum`/`maximum`,
   `additionalProperties`, `anyOf`/`oneOf`/`allOf`, `$ref`; every object needs `required`.
   Range checks belong in Pydantic validators.
+- **Dataset prep** (`scyibl/data/prepare.py`, #3): drops index columns, maps `Source` to
+  `origin` (web/business/ptsd/participant), drops exact duplicates, then a seeded iterative
+  stratified 70/15/15 split to Parquet + aggregate `stats.json`. It refuses to write inside a
+  git repo and never prints rows. Tests use `tests/fixtures/synthetic_raw.csv` (invented).
 - **Categories** are defined once in `scyibl/taxonomy.py`. Definitions are provisional; the
   meanings of CP and ED are unknown (#3). Do not present them as confirmed.
 - **Behaviour lives in config**, secrets in env/`.env`. Switching model or provider should be a
@@ -58,6 +63,8 @@ After changing dependencies, run `uv lock` and commit `uv.lock`.
 
 ## Current state (keep updated)
 
-- Phase 0 done (#2, #4). ADR-001 spike in PR #19; live run 1 posted in #1.
+- Phase 0 done (#2, #4). ADR-001 spike merged (PR #19); live runs 1 and 2 posted in #1.
+- Dataset prep implemented (#3); owner has not yet run it on the real data. Splits are frozen
+  once its `stats.json` is posted in #3. Label definitions in `docs/labels.md` (unconfirmed).
 - Interim `min_confidence: 0.4`; calibrate on the validation split (#11).
 - `pricing:` in config is empty, so cost is reported as unknown until it is filled.

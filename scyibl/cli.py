@@ -1,8 +1,9 @@
-"""Command-line entry point: ``scyibl config check``."""
+"""Command-line entry point: ``scyibl config check`` and ``scyibl data prepare``."""
 
 from __future__ import annotations
 
 import argparse
+import json
 import sys
 from collections.abc import Sequence
 from pathlib import Path
@@ -58,13 +59,36 @@ def main(argv: Sequence[str] | None = None) -> int:
     check.add_argument("--config", type=Path, default=None, help="path to agents.yaml")
     check.add_argument("--env-file", type=Path, default=DEFAULT_ENV_FILE, help="path to .env")
 
+    data_cmd = sub.add_parser("data", help="dataset utilities (issue #3)")
+    data_sub = data_cmd.add_subparsers(dest="action", required=True)
+    prep = data_sub.add_parser("prepare", help="anonymise, clean and split the raw CSV")
+    prep.add_argument("--input", type=Path, required=True, help="raw CSV (private storage)")
+    prep.add_argument("--out-dir", type=Path, required=True, help="directory outside the repo")
+    prep.add_argument("--seed", type=int, default=42, help="split seed")
+
     args = parser.parse_args(argv)
+    if args.command == "data":
+        return _data_prepare(args)
     try:
         cfg = load_runtime_config(config_path=args.config, env_file=args.env_file)
     except ConfigError as exc:
         print(exc, file=sys.stderr)
         return 1
     print(_render(cfg))
+    return 0
+
+
+def _data_prepare(args: argparse.Namespace) -> int:
+    # Imported lazily so ``config check`` does not pay for pandas. Prints aggregate stats only.
+    from scyibl.data.prepare import DataPrepError, prepare
+
+    try:
+        stats = prepare(args.input, args.out_dir, seed=args.seed)
+    except (DataPrepError, FileNotFoundError) as exc:
+        print(exc, file=sys.stderr)
+        return 1
+    print(json.dumps(stats, indent=2))
+    print(f"\nWrote train/validation/test.parquet and stats.json to {args.out_dir}")
     return 0
 
 

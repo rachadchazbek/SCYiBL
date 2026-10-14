@@ -8,7 +8,10 @@ license = { text = "Proprietary" }
 authors = [{ name = "Rachad Chazbek" }]
 dependencies = [
     "cohere>=5.15",
+    "iterative-stratification>=0.1.9",
     "langgraph>=1.0",
+    "pandas>=3.0.6",
+    "pyarrow>=26.0.0",
     "pydantic>=2.7",
     "python-dotenv>=1.0",
     "pyyaml>=6.0",
@@ -61,6 +64,11 @@ python_version = "3.12"
 strict = true
 plugins = ["pydantic.mypy"]
 packages = ["scyibl"]
+
+[[tool.mypy.overrides]]
+# No bundled types. pandas-stubs would type pandas properly but is not added yet (#3).
+module = ["pandas", "pandas.*", "iterstrat.*"]
+ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
