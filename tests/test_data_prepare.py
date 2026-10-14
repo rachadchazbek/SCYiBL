@@ -1,27 +1,37 @@
-"""Dataset preparation (#3). Uses only the synthetic fixture; never the real dataset."""
+"""Dataset preparation (#3). Uses only the synthetic fixture; never the real dataset.
+
+Needs the `data` extra (CI installs it); skipped without it.
+"""
 
 from __future__ import annotations
 
+import hashlib
 import json
+import re
 from pathlib import Path
 
-import pandas as pd
 import pytest
 
-from scyibl.cli import main
-from scyibl.data.prepare import (
+for _module in ("pandas", "pyarrow", "iterstrat"):
+    pytest.importorskip(_module, reason="needs the data extra: uv sync --extra data")
+
+import pandas as pd  # noqa: E402
+
+from scyibl.cli import main  # noqa: E402
+from scyibl.data.prepare import (  # noqa: E402
     LABELS,
     ORIGINS,
     OUTPUT_COLUMNS,
     SPLITS,
+    VERSIONED_PACKAGES,
     DataPrepError,
     prepare,
 )
-from scyibl.taxonomy import CATEGORIES
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 FIXTURE = REPO_ROOT / "tests" / "fixtures" / "synthetic_raw.csv"
-FIXTURE_ROWS = 40
+FIXTURE_ROWS = 41
+KEPT_ROWS = FIXTURE_ROWS - 2  # one empty sentence, one duplicate
 INVENTED_NAMES = ["Jordan Vale", "Priya Moonfield", "Tomas Quill", "Ana Brightwater"]
 
 
@@ -42,9 +52,17 @@ def _write_variant(tmp_path: Path, edit: str) -> Path:
     return path
 
 
+def _fixture_texts() -> list[str]:
+    """Normalised fixture sentences and names, for checking they never leak."""
+    raw = pd.read_csv(FIXTURE)
+    texts = [" ".join(str(s).split()) for s in raw["Sentence"].fillna("")]
+    return [t for t in texts if t] + INVENTED_NAMES
+
+
 def test_fixture_covers_the_cases_under_test() -> None:
     raw = pd.read_csv(FIXTURE)
     assert len(raw) == FIXTURE_ROWS
+    assert int((raw["Sentence"].fillna("").str.strip() == "").sum()) == 1
     assert (raw[LABELS].sum() > 0).all()
     assert int((raw[LABELS].sum(axis=1) == 0).sum()) == 1
     assert set(INVENTED_NAMES) <= set(raw["Source"])
@@ -80,16 +98,53 @@ def test_origin_mapping(tmp_path: Path) -> None:
 
 def test_stats_are_aggregate_only(tmp_path: Path) -> None:
     _run(tmp_path)
-    sentences = pd.read_csv(FIXTURE)["Sentence"]
     stats_text = (tmp_path / "stats.json").read_text()
-    assert not any(" ".join(s.split()) in stats_text for s in sentences)
+    assert not any(text in stats_text for text in _fixture_texts())
 
-    def leaves(node: object) -> list[object]:
+    def leaves(node: object, path: tuple[str, ...] = ()) -> list[tuple[tuple[str, ...], object]]:
         if isinstance(node, dict):
-            return [leaf for value in node.values() for leaf in leaves(value)]
-        return [node]
+            return [leaf for key, value in node.items() for leaf in leaves(value, (*path, key))]
+        return [(path, node)]
 
-    assert all(isinstance(v, int | float) for v in leaves(json.loads(stats_text)))
+    for path, value in leaves(json.loads(stats_text)):
+        if path[0] == "hashes":
+            assert isinstance(value, str)
+            assert re.fullmatch(r"[0-9a-f]{64}", value), path
+        elif path[0] == "versions":
+            assert isinstance(value, str)
+            assert re.fullmatch(r"[0-9][0-9A-Za-z.+-]*", value), path
+        else:
+            assert isinstance(value, int | float), path
+
+
+def test_hashes_follow_the_seed(tmp_path: Path) -> None:
+    stats_a, parts = _run(tmp_path / "a")
+    stats_b, _ = _run(tmp_path / "b")
+    stats_c, _ = _run(tmp_path / "c", seed=7)
+    assert stats_a["hashes"] == stats_b["hashes"]
+    assert stats_a["hashes"] != stats_c["hashes"]
+    expected = {
+        name: hashlib.sha256("\n".join(sorted(part["sentence"])).encode("utf-8")).hexdigest()
+        for name, part in parts.items()
+    }
+    assert stats_a["hashes"] == expected
+
+
+def test_versions_recorded(tmp_path: Path) -> None:
+    stats, _ = _run(tmp_path)
+    versions = stats["versions"]
+    assert isinstance(versions, dict)
+    assert list(versions) == list(VERSIONED_PACKAGES)
+    assert versions["pandas"] == pd.__version__
+
+
+def test_empty_sentences_dropped(tmp_path: Path) -> None:
+    stats, parts = _run(tmp_path)
+    report = stats["input"]
+    assert isinstance(report, dict)
+    assert report["empty_sentences_dropped"] == 1
+    assert "empty_sentences" not in report
+    assert all(part["sentence"].str.len().gt(0).all() for part in parts.values())
 
 
 def test_duplicates_dropped_and_whitespace_normalised(tmp_path: Path) -> None:
@@ -99,7 +154,7 @@ def test_duplicates_dropped_and_whitespace_normalised(tmp_path: Path) -> None:
     assert report["rows_read"] == FIXTURE_ROWS
     assert report["duplicates_dropped"] == 1
     assert report["duplicate_groups_with_conflicting_labels"] == 0
-    assert report["rows_kept"] == FIXTURE_ROWS - 1
+    assert report["rows_kept"] == KEPT_ROWS
     assert report["rows_without_label"] == 1  # kept, only reported
     sentences = pd.concat(parts.values())["sentence"]
     assert sentences.is_unique
@@ -109,7 +164,7 @@ def test_duplicates_dropped_and_whitespace_normalised(tmp_path: Path) -> None:
 def test_split_ratios(tmp_path: Path) -> None:
     _, parts = _run(tmp_path)
     total = sum(len(part) for part in parts.values())
-    assert total == FIXTURE_ROWS - 1
+    assert total == KEPT_ROWS
     for name, ratio in SPLITS.items():
         assert abs(len(parts[name]) - ratio * total) <= 1
 
@@ -166,21 +221,12 @@ def test_cli_prints_aggregate_stats_only(
     out_dir = tmp_path / "out"
     assert main(["data", "prepare", "--input", str(FIXTURE), "--out-dir", str(out_dir)]) == 0
     printed = capsys.readouterr().out
-    assert '"rows_kept": 39' in printed
-    raw = pd.read_csv(FIXTURE)
-    for value in [*raw["Sentence"], *INVENTED_NAMES]:
-        assert " ".join(value.split()) not in printed
+    assert f'"rows_kept": {KEPT_ROWS}' in printed
+    for text in _fixture_texts():
+        assert text not in printed
 
 
 def test_cli_refusal_exits_non_zero(capsys: pytest.CaptureFixture[str]) -> None:
     target = REPO_ROOT / "outputs" / "should-not-exist"
     assert main(["data", "prepare", "--input", str(FIXTURE), "--out-dir", str(target)]) == 1
     assert "inside a git repository" in capsys.readouterr().err
-
-
-def test_labels_doc_matches_taxonomy() -> None:
-    doc = (REPO_ROOT / "docs" / "labels.md").read_text()
-    for info in CATEGORIES.values():
-        assert f"## {info.label}" in doc
-        assert info.definition in doc
-    assert doc.count("Status: unconfirmed") == len(CATEGORIES)

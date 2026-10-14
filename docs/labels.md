@@ -8,7 +8,7 @@ original annotation guide (#3). The meanings of the acronyms **CP** and **ED** a
 Do not present any definition here as confirmed.
 
 This page deliberately contains no dataset examples (privacy rules in `CLAUDE.md`).
-`tests/test_data_prepare.py` checks that it stays in sync with the taxonomy.
+`tests/test_data_no_extra.py` checks that it stays in sync with the taxonomy.
 
 ## CP
 

@@ -6,7 +6,9 @@ print, log or raise with row content; errors and ``stats.json`` are aggregate on
 
 from __future__ import annotations
 
+import hashlib
 import json
+from importlib.metadata import version
 from pathlib import Path
 from typing import Any
 
@@ -26,6 +28,7 @@ ORIGINS = (*sorted(KNOWN_ORIGINS), PARTICIPANT)
 OUTPUT_COLUMNS: list[str] = ["sentence", "origin", *LABELS]
 SPLITS: dict[str, float] = {"train": 0.70, "validation": 0.15, "test": 0.15}
 DEFAULT_SEED = 42
+VERSIONED_PACKAGES = ("pandas", "numpy", "iterative-stratification", "scyibl")
 
 
 class DataPrepError(ValueError):
@@ -72,7 +75,7 @@ def _validated_labels(raw: pd.DataFrame) -> pd.DataFrame:
 
 
 def clean(raw: pd.DataFrame) -> tuple[pd.DataFrame, dict[str, Any]]:
-    """Drop index/Source columns, map origin, normalise text and drop exact duplicates."""
+    """Drop index/Source columns, map origin, normalise text, drop empty and duplicate rows."""
     missing = [c for c in (SOURCE_COLUMN, SENTENCE_COLUMN, *LABELS) if c not in raw.columns]
     if missing:
         raise DataPrepError(f"missing column(s): {missing}")
@@ -85,6 +88,8 @@ def clean(raw: pd.DataFrame) -> tuple[pd.DataFrame, dict[str, Any]]:
     )
     df = df.join(_validated_labels(raw))
 
+    empty = df["sentence"] == ""
+    df = df[~empty]
     duplicated = df["sentence"].duplicated(keep="first")
     repeated = df[df["sentence"].duplicated(keep=False)]
     conflicting = int((repeated.groupby("sentence")[LABELS].nunique() > 1).any(axis=1).sum())
@@ -92,11 +97,11 @@ def clean(raw: pd.DataFrame) -> tuple[pd.DataFrame, dict[str, Any]]:
 
     report = {
         "rows_read": len(raw),
+        "empty_sentences_dropped": int(empty.sum()),
         "duplicates_dropped": int(duplicated.sum()),
         "duplicate_groups_with_conflicting_labels": conflicting,
         "rows_kept": len(df),
         "rows_without_label": _rows_without_label(df),
-        "empty_sentences": int((df["sentence"] == "").sum()),
         "origin": _origin_counts(df),
     }
     return df, report
@@ -140,6 +145,14 @@ def split_stats(parts: dict[str, pd.DataFrame]) -> dict[str, Any]:
     }
 
 
+def split_hashes(parts: dict[str, pd.DataFrame]) -> dict[str, str]:
+    """SHA-256 of each split's sentences, sorted and joined with newlines (UTF-8)."""
+    return {
+        name: hashlib.sha256("\n".join(sorted(part["sentence"])).encode("utf-8")).hexdigest()
+        for name, part in parts.items()
+    }
+
+
 def prepare(input_path: Path, out_dir: Path, seed: int = DEFAULT_SEED) -> dict[str, Any]:
     """Run the whole pipeline and write ``<split>.parquet`` and ``stats.json`` to ``out_dir``."""
     target = check_out_dir(out_dir)
@@ -147,7 +160,14 @@ def prepare(input_path: Path, out_dir: Path, seed: int = DEFAULT_SEED) -> dict[s
     df, report = clean(raw)
     parts = split(df, seed)
 
-    stats = {"seed": seed, "ratios": SPLITS, "input": report, "splits": split_stats(parts)}
+    stats = {
+        "seed": seed,
+        "ratios": SPLITS,
+        "input": report,
+        "splits": split_stats(parts),
+        "hashes": split_hashes(parts),
+        "versions": {package: version(package) for package in VERSIONED_PACKAGES},
+    }
     target.mkdir(parents=True, exist_ok=True)
     for name, part in parts.items():
         part.to_parquet(target / f"{name}.parquet", index=False)

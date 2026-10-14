@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import importlib.util
 import json
 import sys
 from collections.abc import Sequence
@@ -78,8 +79,15 @@ def main(argv: Sequence[str] | None = None) -> int:
     return 0
 
 
+DATA_EXTRA_MODULES = ("pandas", "pyarrow", "iterstrat")
+DATA_EXTRA_HINT = "Install the data extra: uv sync --extra data"
+
+
 def _data_prepare(args: argparse.Namespace) -> int:
-    # Imported lazily so ``config check`` does not pay for pandas. Prints aggregate stats only.
+    # The `data` extra is optional and imported lazily. Prints aggregate stats only.
+    if any(importlib.util.find_spec(name) is None for name in DATA_EXTRA_MODULES):
+        print(DATA_EXTRA_HINT, file=sys.stderr)
+        return 1
     from scyibl.data.prepare import DataPrepError, prepare
 
     try:
