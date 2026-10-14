@@ -12,7 +12,7 @@ CP, Constructivism, Coping, ED, ER/SR, Empowerment, Exposure/Habit and PERMA.
 Requires Python 3.12+ and [uv](https://docs.astral.sh/uv/).
 
 ```bash
-uv sync                          # install runtime + dev dependencies
+uv sync --extra data             # install runtime + dev deps + the dataset-prep extra
 cp .env.example .env             # then fill in COHERE_API_KEY (never commit .env)
 uv run scyibl config check       # validate config/agents.yaml and required secrets
 uv run pytest                    # tests run offline, without API keys

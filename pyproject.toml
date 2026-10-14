@@ -15,6 +15,13 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+# Dataset preparation (`scyibl data prepare`, issue #3). Not needed by the service.
+data = [
+    "iterative-stratification>=0.1.9",
+    "pandas>=3.0.6",
+    "pyarrow>=26.0.0",
+]
+
 # Legacy RoBERTa baseline (issue #10). Heavy, so never installed by default.
 baseline = [
     "torch>=2.3",
@@ -61,6 +68,11 @@ python_version = "3.12"
 strict = true
 plugins = ["pydantic.mypy"]
 packages = ["scyibl"]
+
+[[tool.mypy.overrides]]
+# No bundled types. pandas-stubs would type pandas properly but is not added yet (#3).
+module = ["pandas", "pandas.*", "iterstrat.*"]
+ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
