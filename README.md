@@ -19,6 +19,19 @@ uv run pytest                    # tests run offline, without API keys
 uv run pre-commit install        # lint/format + blocks data and .env files on commit
 ```
 
+### Spike (issue #1)
+
+```bash
+uv run python scripts/spike_cohere.py --dry-run   # offline, fake LLM
+uv run python scripts/spike_cohere.py             # live Cohere calls on invented sentences
+```
+The report is written to `reports/spike/` (git-ignored). Paste the printed summary in issue #1.
+
+## Architecture
+
+LangGraph orchestrates plain async agents that call providers through our own `LLMClient`
+interface. See [ADR-001](docs/adr/0001-agent-framework.md).
+
 ## Configuration
 
 | What | Where |

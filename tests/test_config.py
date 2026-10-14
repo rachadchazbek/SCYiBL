@@ -194,3 +194,22 @@ def test_cli_check_reports_missing_key(
         main(["config", "check", "--config", str(REPO_CONFIG), "--env-file", "/nonexistent"]) == 1
     )
     assert "COHERE_API_KEY" in capsys.readouterr().err
+
+
+def test_graph_and_pricing_sections(tmp_path: Path, base_config: dict[str, Any]) -> None:
+    app = load_app_config(REPO_CONFIG)
+    assert app.graph.checkpointer == "none"
+    assert app.agents["adjudicator"].thinking_budget == 2048
+    base_config["pricing"] = {
+        "Cohere/command-a-03-2025": {"input_per_mtok": 2.5, "output_per_mtok": 10}
+    }
+    app = load_app_config(write(tmp_path, base_config))
+    price = app.price_for(ModelRef.parse("cohere/command-a-03-2025"))
+    assert price is not None
+    assert price.output_per_mtok == 10
+
+
+def test_invalid_checkpointer_rejected(tmp_path: Path, base_config: dict[str, Any]) -> None:
+    base_config["graph"]["checkpointer"] = "postgres"
+    with pytest.raises(ConfigError, match="checkpointer"):
+        load_app_config(write(tmp_path, base_config))
